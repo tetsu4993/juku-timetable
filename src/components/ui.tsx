@@ -26,8 +26,8 @@ export function useLoad<T>(fn: () => Promise<T>, deps: unknown[] = []) {
 
 export function PageTitle({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="mb-4 flex items-center justify-between">
-      <h1 className="text-xl font-bold">{children}</h1>
+    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900">{children}</h1>
       {action}
     </div>
   );
@@ -39,11 +39,11 @@ export function ErrorText({ error }: { error: string | null }) {
 
 export function Button({ variant = 'primary', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'ghost' | 'danger' }) {
   const cls = {
-    primary: 'bg-blue-600 text-white hover:bg-blue-700',
-    ghost: 'border border-slate-300 bg-white hover:bg-slate-100',
+    primary: 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-700',
+    ghost: 'border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50',
     danger: 'text-red-600 hover:bg-red-50',
   }[variant];
-  return <button {...props} className={`rounded px-3 py-1.5 text-sm disabled:opacity-50 ${cls} ${props.className ?? ''}`} />;
+  return <button {...props} className={`rounded-lg px-3 py-1.5 text-sm font-medium transition disabled:opacity-50 ${cls} ${props.className ?? ''}`} />;
 }
 
 export function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -55,7 +55,7 @@ export function Field({ label, children }: { label: string; children: React.Reac
   );
 }
 
-export const inputCls = 'w-full rounded border border-slate-300 px-2 py-1.5 text-sm';
+export const inputCls = 'w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 focus:outline-none';
 
 export function CheckGroup<T extends string | number>({
   options, value, onChange, label = (v) => String(v),
@@ -79,7 +79,7 @@ export function CheckGroup<T extends string | number>({
 export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4" onClick={onClose}>
-      <div className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-lg bg-white p-5 shadow-lg" onClick={(e) => e.stopPropagation()}>
+      <div className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <h2 className="mb-4 text-lg font-bold">{title}</h2>
         {children}
       </div>
@@ -89,12 +89,12 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
 
 export function Table({ head, children }: { head: string[]; children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto rounded border bg-white">
+    <div className="card overflow-x-auto">
       <table className="w-full text-sm">
-        <thead className="bg-slate-100 text-left">
-          <tr>{head.map((h) => <th key={h} className="px-3 py-2 font-medium">{h}</th>)}</tr>
+        <thead className="border-b border-slate-200 bg-slate-50/80 text-left text-xs text-slate-500">
+          <tr>{head.map((h) => <th key={h} className="px-4 py-2.5 font-medium">{h}</th>)}</tr>
         </thead>
-        <tbody className="divide-y">{children}</tbody>
+        <tbody className="divide-y divide-slate-100 [&>tr:hover]:bg-indigo-50/40">{children}</tbody>
       </table>
     </div>
   );

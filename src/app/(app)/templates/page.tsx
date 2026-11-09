@@ -83,7 +83,7 @@ export default function TemplatesPage() {
       <div className="mb-4 flex gap-1">
         {WEEKDAYS.map((w) => (
           <button key={w} onClick={() => setWd(w)}
-            className={`rounded px-4 py-1.5 text-sm ${w === wd ? 'bg-blue-600 text-white' : 'border bg-white text-slate-600'}`}>
+            className={`rounded px-4 py-1.5 text-sm ${w === wd ? 'bg-indigo-600 text-white' : 'border bg-white text-slate-600'}`}>
             {WEEKDAY_LABELS[w]}曜
           </button>
         ))}
@@ -92,7 +92,7 @@ export default function TemplatesPage() {
       {!data || !view ? <p className="text-slate-500">読み込み中…</p> : (
         <div className="flex gap-4">
           <aside className="w-[30%] min-w-72">
-            <section className="rounded border bg-white p-3">
+            <section className="card p-3">
               <h2 className="mb-1 font-bold">{WEEKDAY_LABELS[wd]}曜の未配置（{view.pool.length}人）</h2>
               <p className="mb-2 text-xs text-slate-500">生徒マスタで{WEEKDAY_LABELS[wd]}曜に通う生徒です。ドラッグして配置します。</p>
               <Cell dropId="pool" className="flex flex-wrap content-start gap-1 rounded bg-slate-50 p-2">
@@ -105,7 +105,7 @@ export default function TemplatesPage() {
           </aside>
           <div className="flex-1 overflow-x-auto">
             {data.periods.length === 0 || view.cols.length === 0 ? (
-              <p className="rounded border bg-white p-6 text-center text-slate-500">
+              <p className="card p-6 text-center text-slate-500">
                 {data.periods.length === 0 ? 'コマが登録されていません。' : `${WEEKDAY_LABELS[wd]}曜に来る先生がいません。`}
               </p>
             ) : (

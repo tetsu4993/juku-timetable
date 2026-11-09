@@ -6,6 +6,8 @@ export function StudentChip({ dragId, label, sub, warn, note }: {
   dragId: string; label: string; sub?: string; warn?: string; note?: string;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: dragId });
+  // 学年（小・中・高）で色分け
+  const tone = sub?.startsWith('小') ? 'border-sky-300 bg-sky-50' : sub?.startsWith('高') ? 'border-violet-300 bg-violet-50' : 'border-emerald-300 bg-emerald-50';
   const style = transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined;
   return (
     <div
@@ -14,8 +16,8 @@ export function StudentChip({ dragId, label, sub, warn, note }: {
       {...listeners}
       {...attributes}
       title={warn}
-      className={`inline-flex cursor-grab select-none items-center gap-1 rounded-full border px-2 py-0.5 text-xs shadow-sm active:cursor-grabbing
-        ${warn ? 'border-amber-500 bg-amber-50 ring-1 ring-amber-400' : 'border-emerald-400 bg-emerald-50'}
+      className={`inline-flex cursor-grab select-none items-center gap-1 rounded-full border px-2 py-0.5 text-xs shadow-sm transition hover:shadow active:cursor-grabbing
+        ${warn ? 'border-amber-500 bg-amber-50 ring-1 ring-amber-400' : tone}
         ${isDragging ? 'z-50 opacity-70' : ''}`}
     >
       <span className="font-medium">{label}</span>

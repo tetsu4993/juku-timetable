@@ -18,11 +18,11 @@ export function SidePanel({ dateLabel, teachers, pool, others, onAddExtras }: {
 
   return (
     <aside className="w-[30%] min-w-72 space-y-4">
-      <section className="rounded border bg-white p-3">
+      <section className="card p-3">
         <h2 className="mb-2 font-bold">{dateLabel} の来塾者</h2>
         <p className="mb-1 text-xs font-medium text-slate-500">先生（{teachers.length}人）</p>
         <div className="mb-3 flex flex-wrap gap-1">
-          {teachers.map((t) => <span key={t.id} className="rounded-full border border-blue-300 bg-blue-50 px-2 py-0.5 text-xs">{t.name}</span>)}
+          {teachers.map((t) => <span key={t.id} className="rounded-full border border-indigo-300 bg-indigo-50 px-2 py-0.5 text-xs">{t.name}</span>)}
           {teachers.length === 0 && <span className="text-xs text-slate-400">なし</span>}
         </div>
         <p className="mb-1 text-xs font-medium text-slate-500">未配置の生徒（{pool.length}人）ドラッグして時間割へ</p>
@@ -40,7 +40,7 @@ export function SidePanel({ dateLabel, teachers, pool, others, onAddExtras }: {
         </Cell>
       </section>
 
-      <section className="rounded border bg-white p-3">
+      <section className="card p-3">
         <h2 className="mb-1 font-bold">緊急の曜日変更</h2>
         <p className="mb-2 text-xs text-slate-500">この日に来ることになった生徒を選び、未配置の一覧に加えます。</p>
         <input className={`${inputCls} mb-2`} placeholder="氏名・学年で検索" value={q} onChange={(e) => setQ(e.target.value)} />

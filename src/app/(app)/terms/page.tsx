@@ -42,7 +42,7 @@ export default function TermsPage() {
             <td className="px-3 py-2">{KIND_LABEL[t.kind]}</td>
             <td className="px-3 py-2">{t.startDate}〜{t.endDate}</td>
             <td className="px-3 py-2 text-right whitespace-nowrap">
-              <Link href={`/terms/${t.id}`} className="mr-2 text-sm text-blue-600 hover:underline">
+              <Link href={`/terms/${t.id}`} className="mr-2 text-sm text-indigo-600 hover:underline">
                 {t.kind === 'kosyu' ? '申込・来塾可否' : '来塾可否'}
               </Link>
               <Button variant="ghost" onClick={() => { setSaveError(null); setDraft(t); }}>編集</Button>{' '}

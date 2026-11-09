@@ -153,7 +153,7 @@ export default function TimetablePage() {
             onAddExtras={(ids) => act(() => addExtras(date, ids))} /></div>
           <div className="flex-1 overflow-x-auto">
             {data.periods.length === 0 || view.colTeachers.length === 0 ? (
-              <p className="rounded border bg-white p-6 text-center text-slate-500">
+              <p className="card p-6 text-center text-slate-500">
                 {data.periods.length === 0 ? 'コマが登録されていません。' : 'この日に来塾する先生がいません。'}
               </p>
             ) : (

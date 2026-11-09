@@ -18,7 +18,7 @@ export function ResetButton() {
   }
   return (
     <button onClick={reset} disabled={busy}
-      className="ml-auto rounded border border-slate-300 px-3 py-1 text-xs text-slate-600 hover:bg-slate-100 disabled:opacity-50">
+      className="mt-3 w-full rounded-lg border border-white/20 px-3 py-2 text-xs text-slate-300 hover:bg-white/10 hover:text-white disabled:opacity-50">
       {busy ? '戻しています…' : 'デモデータを初期状態に戻す'}
     </button>
   );

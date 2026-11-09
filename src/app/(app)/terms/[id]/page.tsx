@@ -32,7 +32,7 @@ export default function TermDetailPage({ params }: { params: Promise<{ id: strin
 
   if (error) return <ErrorText error={error} />;
   if (!data) return <p className="text-slate-500">読み込み中…</p>;
-  if (!data.term) return <p>期間が見つかりません。<Link href="/terms" className="text-blue-600">一覧へ戻る</Link></p>;
+  if (!data.term) return <p>期間が見つかりません。<Link href="/terms" className="text-indigo-600">一覧へ戻る</Link></p>;
 
   const term = data.term;
   const isKosyu = term.kind === 'kosyu';
@@ -51,12 +51,12 @@ export default function TermDetailPage({ params }: { params: Promise<{ id: strin
   return (
     <>
       <PageTitle>{term.name} <span className="text-sm font-normal text-slate-500">{term.startDate}〜{term.endDate}</span></PageTitle>
-      <Link href="/terms" className="mb-3 inline-block text-sm text-blue-600 hover:underline">← 期間一覧へ</Link>
+      <Link href="/terms" className="mb-3 inline-block text-sm text-indigo-600 hover:underline">← 期間一覧へ</Link>
       {isKosyu && (
         <div className="mb-4 flex gap-2 border-b">
           {(['enroll', 'avail'] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)}
-              className={`px-3 py-2 text-sm ${activeTab === t ? 'border-b-2 border-blue-600 font-semibold text-blue-700' : 'text-slate-500'}`}>
+              className={`px-3 py-2 text-sm ${activeTab === t ? 'border-b-2 border-indigo-600 font-semibold text-indigo-700' : 'text-slate-500'}`}>
               {t === 'enroll' ? '申込コマ数' : '日付ごとの来塾可否'}
             </button>
           ))}
@@ -86,7 +86,7 @@ function EnrollTable({ data, onSave }: { data: Loaded; onSave: (s: string, subj:
     <>
       <p className="mb-2 text-sm text-slate-500">数字を変えて枠の外をクリックすると保存されます。0にすると申込なしになり、その生徒は講習期間の時間割に出ません。</p>
       <input className={`${inputCls} mb-3 max-w-xs`} placeholder="氏名・学年で絞り込み" value={q} onChange={(e) => setQ(e.target.value)} />
-      <div className="overflow-x-auto rounded border bg-white">
+      <div className="overflow-x-auto card">
         <table className="text-sm">
           <thead className="bg-slate-100">
             <tr>
@@ -161,7 +161,7 @@ function AvailEditor({ termId, dates, data, onChanged, onError }: {
           const wd = weekdayOf(d);
           return (
             <label key={d} className={`rounded border p-2 text-sm ${v === 'no' ? 'bg-red-50' : v === 'yes' ? 'bg-green-50' : 'bg-white'}`}>
-              <span className={`block font-medium ${wd === 0 ? 'text-red-600' : wd === 6 ? 'text-blue-600' : ''}`}>
+              <span className={`block font-medium ${wd === 0 ? 'text-red-600' : wd === 6 ? 'text-indigo-600' : ''}`}>
                 {d.slice(5).replace('-', '/')}（{WEEKDAY_LABELS[wd]}）
               </span>
               <select className="mt-1 w-full rounded border border-slate-200 text-xs" value={v} onChange={(e) => change(d, e.target.value)}>

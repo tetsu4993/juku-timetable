@@ -34,14 +34,14 @@ export default function ScoreEntryPage() {
   }
 
   if (!data) return <><ErrorText error={error} /><p className="text-slate-500">読み込み中…</p></>;
-  if (!data.exam) return <p>テストが見つかりません。<Link href="/tests" className="text-blue-600">一覧へ</Link></p>;
+  if (!data.exam) return <p>テストが見つかりません。<Link href="/tests" className="text-indigo-600">一覧へ</Link></p>;
 
   const shown = data.students.filter((s) => !grade || s.grade === grade);
   const avg = subjectAverages(data.scores, id);
 
   return (
     <>
-      <PageTitle action={<Link href="/tests" className="text-sm text-blue-600 hover:underline">← テスト一覧</Link>}>{data.exam.name} の点数入力</PageTitle>
+      <PageTitle action={<Link href="/tests" className="text-sm text-indigo-600 hover:underline">← テスト一覧</Link>}>{data.exam.name} の点数入力</PageTitle>
       <div className="mb-3 flex flex-wrap items-center gap-3 text-sm">
         <label className="flex items-center gap-2">学年
           <select className={`${inputCls} w-28`} value={grade} onChange={(e) => setGrade(e.target.value)}>
@@ -52,7 +52,7 @@ export default function ScoreEntryPage() {
         <span className="text-slate-500">欄を離れると保存します。空欄は合計・平均に含めません。</span>
       </div>
       <ErrorText error={error} />
-      <div className="overflow-x-auto rounded border bg-white">
+      <div className="overflow-x-auto card">
         <table className="w-full text-sm">
           <thead className="bg-slate-100">
             <tr>

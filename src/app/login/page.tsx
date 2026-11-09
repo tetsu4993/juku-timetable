@@ -24,17 +24,17 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow">
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-950 to-indigo-800 px-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
         <h1 className="text-2xl font-bold text-slate-800">個人塾 時間割・成績管理</h1>
         <p className="mt-3 text-sm text-slate-600">
           講習期間の時間割をドラッグ＆ドロップで組めるデモアプリです。
-          データはすべて架空のものです。
+          曜日テンプレート・定期テストの成績管理（面談資料）にも対応。データはすべて架空のものです。
         </p>
         <button
           onClick={guestLogin}
           disabled={loading}
-          className="mt-6 w-full rounded-lg bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+          className="mt-6 w-full rounded-lg bg-indigo-600 py-3 font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
         >
           {loading ? 'ログイン中…' : 'ゲストとして試す'}
         </button>

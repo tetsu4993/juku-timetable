@@ -58,7 +58,7 @@ export default function StudentsPage() {
             <td className="px-3 py-2">{s.grade}</td>
             <td className="px-3 py-2">{describe(s)}</td>
             <td className="px-3 py-2 text-right whitespace-nowrap">
-              <Link href={`/students/${s.id}/grades`} className="mr-2 text-sm text-blue-600 hover:underline">成績</Link>
+              <Link href={`/students/${s.id}/grades`} className="mr-2 text-sm text-indigo-600 hover:underline">成績</Link>
               <Button variant="ghost" onClick={() => { setSaveError(null); setDraft(s); }}>編集</Button>{' '}
               <Button variant="danger" onClick={() => remove(s)}>削除</Button>
             </td>

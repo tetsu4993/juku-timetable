@@ -1,4 +1,5 @@
 import type {
+  CellIsland, Island, School,
   Availability, Enrollment, Exam, ExtraAttendee, Grade, Period, Placement, Score, Student, Subject, Teacher, TemplateSlot, Term, Weekday,
 } from '@/domain/types';
 import { createClient } from './supabase/client';
@@ -19,7 +20,7 @@ const hm = (t: string) => t.slice(0, 5);
 export const toTeacher = (r: Row): Teacher =>
   ({ id: r.id, name: r.name, subjects: r.subjects, grades: r.grades, weekdays: r.weekdays });
 export const toStudent = (r: Row): Student => ({
-  id: r.id, name: r.name, grade: r.grade as Grade,
+  id: r.id, name: r.name, grade: r.grade as Grade, schoolId: r.school_id ?? null,
   regular: (r.student_regular ?? []).map((x: Row) => ({ weekday: x.weekday as Weekday, subject: x.subject as Subject })),
 });
 export const toPeriod = (r: Row): Period =>
@@ -57,7 +58,7 @@ export async function upsertTeacher(t: Omit<Teacher, 'id'> & { id?: string }) {
   await run(db().from('teachers').upsert({ ...t }).select());
 }
 export async function upsertStudent(s: Omit<Student, 'id'> & { id?: string }) {
-  const [row] = await run<Row[]>(db().from('students').upsert({ id: s.id, name: s.name, grade: s.grade }).select());
+  const [row] = await run<Row[]>(db().from('students').upsert({ id: s.id, name: s.name, grade: s.grade, school_id: s.schoolId ?? null }).select());
   await run(db().from('student_regular').delete().eq('student_id', row.id));
   if (s.regular.length) {
     await run(db().from('student_regular').insert(s.regular.map((r) => ({ student_id: row.id, ...r }))));
@@ -153,3 +154,45 @@ export const listScoresForStudent = async (studentId: string) =>
   (await run<Row[]>(db().from('scores').select('*').eq('student_id', studentId))).map(toScore);
 export const setScore = (examId: string, studentId: string, subject: Subject, score: number | null) =>
   run(db().from('scores').upsert({ exam_id: examId, student_id: studentId, subject, score }, { onConflict: 'exam_id,student_id,subject' }));
+
+// ---- 学校・島・繰り上げ ----
+export const toSchool = (r: Row): School => ({ id: r.id, name: r.name, kind: r.kind });
+export const toIsland = (r: Row): Island => ({ id: r.id, name: r.name, sortOrder: r.sort_order });
+export const toCellIsland = (r: Row): CellIsland => ({ periodId: r.period_id, teacherId: r.teacher_id, islandId: r.island_id });
+
+export const listSchools = async () => (await run<Row[]>(db().from('schools').select('*').order('kind').order('name'))).map(toSchool);
+export const upsertSchool = (x: Omit<School, 'id'> & { id?: string }) => run(db().from('schools').upsert({ ...x }));
+export const deleteSchool = (id: string) => run(db().from('schools').delete().eq('id', id));
+export const listIslands = async () => (await run<Row[]>(db().from('islands').select('*').order('sort_order').order('name'))).map(toIsland);
+export const upsertIsland = (x: Omit<Island, 'id'> & { id?: string }) =>
+  run(db().from('islands').upsert({ ...(x.id ? { id: x.id } : {}), name: x.name, sort_order: x.sortOrder }));
+export const deleteIsland = (id: string) => run(db().from('islands').delete().eq('id', id));
+
+export const listCellIslands = async (date: string) =>
+  (await run<Row[]>(db().from('cell_islands').select('*').eq('date', date))).map(toCellIsland);
+export async function setCellIsland(date: string, periodId: string, teacherId: string, islandId: string | null) {
+  const key = { date, period_id: periodId, teacher_id: teacherId };
+  if (islandId === null) {
+    await run(db().from('cell_islands').delete().match(key));
+  } else {
+    await run(db().from('cell_islands').upsert({ ...key, island_id: islandId }, { onConflict: 'date,period_id,teacher_id' }));
+  }
+}
+export const listTemplateIslands = async (weekday: Weekday) =>
+  (await run<Row[]>(db().from('template_islands').select('*').eq('weekday', weekday))).map(toCellIsland);
+export async function setTemplateIsland(weekday: Weekday, periodId: string, teacherId: string, islandId: string | null) {
+  const key = { weekday, period_id: periodId, teacher_id: teacherId };
+  if (islandId === null) {
+    await run(db().from('template_islands').delete().match(key));
+  } else {
+    await run(db().from('template_islands').upsert({ ...key, island_id: islandId }, { onConflict: 'weekday,period_id,teacher_id' }));
+  }
+}
+
+/** 最後に学年を繰り上げた年度（記録がなければ null） */
+export async function lastPromotedYear(): Promise<number | null> {
+  const rows = await run<Row[]>(db().from('promotions').select('year').order('year', { ascending: false }).limit(1));
+  return rows[0]?.year ?? null;
+}
+/** 学年を1つ上げる。その年度に実行済みなら false */
+export const promoteGrades = (year: number) => run<boolean>(db().rpc('promote_grades', { p_year: year }));

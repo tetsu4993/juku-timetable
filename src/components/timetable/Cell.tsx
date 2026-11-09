@@ -9,7 +9,7 @@ export function Cell({ dropId, over, children, className = '' }: {
   return (
     <div
       ref={setNodeRef}
-      className={`min-h-16 ${className} ${over ? 'bg-red-100' : ''} ${isOver ? 'outline outline-2 outline-blue-500' : ''}`}
+      className={`min-h-16 ${className} ${over ? 'bg-red-100' : ''} ${isOver ? 'outline outline-2 outline-indigo-500' : ''}`}
     >
       {children}
     </div>

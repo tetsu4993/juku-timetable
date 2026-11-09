@@ -41,12 +41,12 @@ export default function ExamsPage() {
       <Table head={['テスト', '年度', '学期', '種別', '']}>
         {data?.map((x) => (
           <tr key={x.id}>
-            <td className="px-3 py-2 font-medium"><Link href={`/tests/${x.id}`} className="text-blue-600 hover:underline">{x.name}</Link></td>
+            <td className="px-3 py-2 font-medium"><Link href={`/tests/${x.id}`} className="text-indigo-600 hover:underline">{x.name}</Link></td>
             <td className="px-3 py-2">{x.year}</td>
             <td className="px-3 py-2">{x.semester}学期</td>
             <td className="px-3 py-2">{EXAM_KIND_LABEL[x.kind]}</td>
             <td className="whitespace-nowrap px-3 py-2 text-right">
-              <Link href={`/tests/${x.id}`} className="mr-2 text-sm text-blue-600 hover:underline">点数を入力</Link>
+              <Link href={`/tests/${x.id}`} className="mr-2 text-sm text-indigo-600 hover:underline">点数を入力</Link>
               <Button variant="ghost" onClick={() => { setSaveError(null); setDraft(x); }}>編集</Button>{' '}
               <Button variant="danger" onClick={() => remove(x)}>削除</Button>
             </td>

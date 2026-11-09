@@ -24,7 +24,7 @@ export default function StudentGradesPage() {
   }, [id]);
 
   if (!data) return <><ErrorText error={error} /><p className="text-slate-500">読み込み中…</p></>;
-  if (!data.student) return <p>生徒が見つかりません。<Link href="/students" className="text-blue-600">一覧へ</Link></p>;
+  if (!data.student) return <p>生徒が見つかりません。<Link href="/students" className="text-indigo-600">一覧へ</Link></p>;
 
   const { student, scores } = data;
   // 点数が1つでもあるテストだけを並べる
@@ -41,7 +41,7 @@ export default function StudentGradesPage() {
     <div className="mx-auto max-w-5xl">
       <style>{'@page { size: A4 portrait; margin: 12mm; }'}</style>
       <div className="mb-4 flex items-center justify-between print:hidden">
-        <Link href="/students" className="text-sm text-blue-600 hover:underline">← 生徒一覧</Link>
+        <Link href="/students" className="text-sm text-indigo-600 hover:underline">← 生徒一覧</Link>
         <Button variant="ghost" onClick={() => window.print()}>印刷（面談資料）</Button>
       </div>
       <h1 className="text-xl font-bold">{student.name} さん　定期テスト成績</h1>
@@ -49,10 +49,10 @@ export default function StudentGradesPage() {
       <ErrorText error={error} />
 
       {exams.length === 0 ? (
-        <p className="rounded border bg-white p-6 text-center text-slate-500">まだ点数が入力されていません。</p>
+        <p className="card p-6 text-center text-slate-500">まだ点数が入力されていません。</p>
       ) : (
         <>
-          <div className="mb-6 overflow-x-auto rounded border bg-white">
+          <div className="mb-6 overflow-x-auto card">
             <table className="w-full text-sm">
               <thead className="bg-slate-100">
                 <tr>
@@ -87,7 +87,7 @@ export default function StudentGradesPage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 print:grid-cols-1">
-            <section className="rounded border bg-white p-3 break-inside-avoid">
+            <section className="card p-3 break-inside-avoid">
               <h2 className="mb-2 text-sm font-bold">5教科合計の推移</h2>
               <div className="h-56">
                 <ResponsiveContainer>
@@ -101,7 +101,7 @@ export default function StudentGradesPage() {
                 </ResponsiveContainer>
               </div>
             </section>
-            <section className="rounded border bg-white p-3 break-inside-avoid">
+            <section className="card p-3 break-inside-avoid">
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-sm font-bold">{subject}の推移</h2>
                 <select className={`${inputCls} w-32 print:hidden`} value={subject} onChange={(e) => setSubject(e.target.value as Subject)}>
