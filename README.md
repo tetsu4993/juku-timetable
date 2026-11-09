@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 個人塾 時間割アプリ
 
-## Getting Started
+個人塾の「講習期間の時間割づくり」を、ドラッグ＆ドロップで行えるWebアプリです。
 
-First, run the development server:
+## なぜ作ったか
+
+塾講師をしていたとき、長期休暇の講習では生徒の希望（科目ごとのコマ数・来られる日）を紙やExcelで集め、
+先生の出勤日と突き合わせながら手作業で時間割を組んでいました。
+講師5人・生徒約70人・1コマ25人前後という規模でも、
+「先生1人に4人まで」「担当できる科目・学年」「同じ生徒を同じコマに入れない」「申込コマ数の残り」を
+頭の中で同時に確認する必要があり、ミスと時間の原因になっていました。
+このアプリは、その確認を画面が肩代わりすることを目的にしています。
+
+## 主な機能
+
+- **時間割（左：来塾者／右：コマ×先生の表）**
+  - その日に来る先生・生徒を、曜日（通常期）や来塾可否（講習）から自動で表示
+  - 生徒をドラッグして配置、表内での移動、一覧に戻して取り消し
+  - 複数科目を受ける生徒は、置いたときに科目を選択
+  - 先生1人に4人を超えたマスは赤く表示（実際の運用に合わせ、配置自体は可能）
+  - 担当外の科目・学年は ⚠ で警告、同じコマへの二重配置は拒否
+  - 講習では科目ごとの残りコマ数を表示
+  - 緊急の曜日変更：その日だけ来る生徒をチェックして追加
+- **マスタ管理**：先生（担当科目・学年・出勤曜日）、生徒（学年・通常の曜日と科目）、コマ、期間・講習（申込コマ数・来られない日）
+- **デモ**：ゲストとしてログインして試せます。データは毎日3時（日本時間）に初期状態へ戻り、画面上部のボタンでも戻せます。
+
+※ 登録されているデータはすべて架空のものです。
+
+## 技術構成
+
+| 分類 | 使用技術 |
+| --- | --- |
+| フロントエンド | Next.js 15（App Router）, React 19, TypeScript, Tailwind CSS, dnd-kit |
+| バックエンド / DB | Supabase（PostgreSQL, Row Level Security, 匿名ログイン） |
+| ホスティング | Vercel（Cron でデモデータを毎日リセット） |
+| テスト | Vitest（来塾者の判定・残りコマ数・警告などの業務ロジックをテスト駆動で実装） |
+
+業務ルールは `src/domain/` に画面やDBから独立した関数としてまとめ、テストで守っています。
+
+## 開発の進め方
+
+AI駆動開発（Claude Code）で作成しました。
+要件の整理 → 設計書（`docs/superpowers/specs/`）→ 実装計画（`docs/superpowers/plans/`）→ テスト駆動での実装、
+という流れで、仕様の判断とレビューは自分で行い、実装をAIと分担しています。
+
+## ローカルでの起動
 
 ```bash
+npm install
+cp .env.example .env.local   # Supabase の URL・キーを記入
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+DBは Supabase の SQL Editor で `supabase/migrations/` のSQLを順に実行し、`select reset_demo();` でデモデータを入れます。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 今後の予定
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- 定期テスト（中間・期末）の科目別成績管理
+- 返却された答案用紙の画像から点数を読み取る機能（AI-OCR）
