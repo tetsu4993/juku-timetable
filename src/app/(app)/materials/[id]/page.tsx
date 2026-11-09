@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { DIFFICULTIES, QUESTION_COUNTS, splitUnitLines, type Difficulty } from '@/domain/ai-test';
+import { DIFFICULTIES, QUESTION_COUNTS, splitUnitLines, testTypeLabel, testTypesFor, type Difficulty } from '@/domain/ai-test';
 import type { MaterialUnit } from '@/domain/types';
 import {
   addMaterialUnits, deleteGeneratedTest, deleteMaterialUnit, getSchoolMaterial, listGeneratedTests, listMaterialUnits, renameMaterialUnit,
@@ -25,6 +25,7 @@ export default function MaterialPage() {
   const [checked, setChecked] = useState<string[]>([]);
   const [count, setCount] = useState<number>(10);
   const [difficulty, setDifficulty] = useState<Difficulty>('standard');
+  const [testType, setTestType] = useState('general');
   const [bulk, setBulk] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -57,7 +58,7 @@ export default function MaterialPage() {
     try {
       const res = await fetch('/api/generate-test', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ materialId: id, unitIds: checked, count, difficulty }),
+        body: JSON.stringify({ materialId: id, unitIds: checked, count, difficulty, testType }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) { setMessage(body.error ?? `作成できませんでした（${res.status}）`); reload(); return; }
@@ -117,6 +118,15 @@ export default function MaterialPage() {
             <h2 className="mb-1 font-bold">疑似テストを作る</h2>
             <p className="mb-3 text-xs text-slate-500">チェックした範囲から、AI（Claude）が定期テスト形式の練習問題を作ります。</p>
             <div className="mb-3 rounded-lg bg-indigo-50 px-3 py-2 text-sm text-indigo-900">範囲：{checked.length} 単元を選択中</div>
+            <p className="mb-1 text-sm">テストの種類</p>
+            <div className="mb-3 flex flex-wrap gap-1">
+              {testTypesFor(material.subject).map((t) => (
+                <button key={t.key} onClick={() => setTestType(t.key)} title={t.instruction}
+                  className={`rounded-lg px-3 py-1.5 text-sm ${testType === t.key ? 'bg-indigo-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
             <div className="mb-3 grid grid-cols-2 gap-2 text-sm">
               <label>問題数
                 <select className={inputCls} value={count} onChange={(e) => setCount(Number(e.target.value))}>
@@ -149,7 +159,7 @@ export default function MaterialPage() {
                       <div className="truncate">{t.title}</div>
                       <div className="truncate text-xs text-slate-500">
                         {new Date(t.createdAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        ・{t.questions.length}問・{t.unitNames.join('、')}
+                        ・{testTypeLabel(material.subject, t.testType)}・{t.questions.length}問・{t.unitNames.join('、')}
                       </div>
                     </Link>
                     <button className="shrink-0 text-xs text-red-500 hover:text-red-700" onClick={() => removeTest(t.id)}>削除</button>

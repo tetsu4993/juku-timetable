@@ -212,7 +212,7 @@ export const deleteSchoolMaterial = (id: string) => run(db().from('school_materi
 // ---- 教材の目次・疑似テスト ----
 export const toMaterialUnit = (r: Row): MaterialUnit => ({ id: r.id, materialId: r.material_id, name: r.name, sortOrder: r.sort_order });
 export const toGeneratedTest = (r: Row): GeneratedTest => ({
-  id: r.id, materialId: r.material_id, unitNames: r.unit_names, difficulty: r.difficulty,
+  id: r.id, materialId: r.material_id, unitNames: r.unit_names, difficulty: r.difficulty, testType: r.test_type ?? 'general',
   title: r.title, questions: r.questions, createdAt: r.created_at,
 });
 export async function getSchoolMaterial(id: string): Promise<SchoolMaterial | null> {
