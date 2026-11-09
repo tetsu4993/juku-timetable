@@ -20,3 +20,7 @@ export function weekdayOf(date: string): Weekday {
   const [y, m, d] = date.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay() as Weekday;
 }
+
+export interface TemplateSlot { id: string; weekday: Weekday; periodId: string; teacherId: string; studentId: string; subject: Subject }
+export interface Exam { id: string; name: string; year: number; semester: 1 | 2 | 3; kind: 'midterm' | 'final' }
+export interface Score { examId: string; studentId: string; subject: Subject; score: number | null }
