@@ -9,7 +9,7 @@ test('DBの行をドメイン型に変換する', () => {
   expect(toPlacement({ id: 'x', date: '2026-08-04', period_id: 'p', teacher_id: 't', student_id: 's', subject: '数学' }))
     .toEqual({ id: 'x', date: '2026-08-04', periodId: 'p', teacherId: 't', studentId: 's', subject: '数学' });
   expect(toStudent({ id: 's', name: '田中', grade: '中2', student_regular: [{ weekday: 2, subject: '数学' }] }))
-    .toEqual({ id: 's', name: '田中', grade: '中2', regular: [{ weekday: 2, subject: '数学' }] });
+    .toEqual({ id: 's', name: '田中', grade: '中2', schoolId: null, regular: [{ weekday: 2, subject: '数学' }] });
 });
 
 test('一意制約違反(23505)は AlreadyPlacedError になる', () => {
