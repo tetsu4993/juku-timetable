@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { ResetButton } from '@/components/ResetButton';
 
 const NAV = [
   { href: '/timetable', label: '時間割' },
@@ -25,6 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               {n.label}
             </Link>
           ))}
+          <ResetButton />
         </nav>
       </header>
       <main className="mx-auto max-w-[1400px] px-4 py-6">{children}</main>
