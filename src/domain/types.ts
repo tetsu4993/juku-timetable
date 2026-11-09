@@ -4,10 +4,10 @@ export const SUBJECTS = ['国語', '数学', '英語', '理科', '社会', '音�
 export type Subject = (typeof SUBJECTS)[number];
 
 export const GRADES = ['小1', '小2', '小3', '小4', '小5', '小6', '中1', '中2', '中3', '高1', '高2', '高3'] as const;
-export type Grade = (typeof GRADES)[number];
+export type Grade = (typeof GRADES)[number] | '卒業';
 
 export interface Teacher { id: string; name: string; subjects: Subject[]; grades: Grade[]; weekdays: Weekday[] }
-export interface Student { id: string; name: string; grade: Grade; regular: { weekday: Weekday; subject: Subject }[] }
+export interface Student { id: string; name: string; grade: Grade; schoolId?: string | null; regular: { weekday: Weekday; subject: Subject }[] }
 export interface Period { id: string; name: string; start: string; end: string; sortOrder: number }
 export interface Term { id: string; name: string; kind: 'regular' | 'kosyu'; startDate: string; endDate: string }
 export interface Enrollment { termId: string; studentId: string; subject: Subject; count: number }
@@ -24,3 +24,6 @@ export function weekdayOf(date: string): Weekday {
 export interface TemplateSlot { id: string; weekday: Weekday; periodId: string; teacherId: string; studentId: string; subject: Subject }
 export interface Exam { id: string; name: string; year: number; semester: 1 | 2 | 3; kind: 'midterm' | 'final' }
 export interface Score { examId: string; studentId: string; subject: Subject; score: number | null }
+export interface School { id: string; name: string; kind: '小' | '中' | '高' }
+export interface Island { id: string; name: string; sortOrder: number }
+export interface CellIsland { periodId: string; teacherId: string; islandId: string }
