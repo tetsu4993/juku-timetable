@@ -96,7 +96,7 @@ export default function TemplatesPage() {
       <ErrorText error={error} />
       {!data || !view ? <p className="text-slate-500">読み込み中…</p> : (
         <div className="flex gap-4">
-          <aside className="w-[30%] min-w-72">
+          <aside className="w-80 shrink-0">
             <section className="card p-3">
               <h2 className="mb-1 font-bold">{WEEKDAY_LABELS[wd]}曜の未配置（{view.pool.length}人）</h2>
               <p className="mb-2 text-xs text-slate-500">生徒マスタで{WEEKDAY_LABELS[wd]}曜に通う生徒です。ドラッグして配置します。</p>
