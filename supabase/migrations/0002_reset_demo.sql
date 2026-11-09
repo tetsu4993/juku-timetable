@@ -23,7 +23,7 @@ declare
   mei text[] := array['陽向','結衣','蓮','葵','湊','凛','悠真','咲良','颯太','美月',
                       '大和','紬','樹','杏','律'];
   grades text[] := array['小5','小6','中1','中2','中3','中1','中2','中3'];
-  i int; j int; d int; n int;
+  i int; j int; k int; d int; n int;
 begin
   truncate placements, extra_attendees, availability, enrollments, student_regular,
            students, teachers, periods, terms restart identity cascade;
@@ -86,15 +86,35 @@ begin
   insert into availability (term_id, person_type, person_id, date, available)
   values (summer_id, 'teacher', t_ids[3], summer_start + 7, false);
 
-  -- 講習の初日〜3日目に1日25件の配置（各先生・各コマに1人ずつ）
+  -- 講習の初日〜3日目に1日約25件の配置
+  -- その日に出勤する先生に、担当できる科目・学年の生徒を割り当てる（1コマ5人、先生1人あたり最大2人）
   for d in 0..2 loop
-    for n in 0..24 loop
-      i := 1 + (d * 25 + n) % 70;
-      select e.subject into subj from enrollments e
-        where e.term_id = summer_id and e.student_id = s_ids[i]
-        order by e.subject limit 1;
-      insert into placements (date, period_id, teacher_id, student_id, subject)
-      values (summer_start + d, p_ids[1 + n % 5], t_ids[1 + n / 5], s_ids[i], subj);
+    for i in 1..5 loop          -- コマ
+      n := 0;
+      for k in 1..2 loop
+      for j in 1..5 loop        -- 先生
+        continue when not exists (
+          select 1 from teachers t where t.id = t_ids[j]
+            and extract(dow from summer_start + d)::int = any (t.weekdays));
+          exit when n >= 5;
+          select e.student_id, e.subject into sid, subj
+            from enrollments e
+            join students s on s.id = e.student_id
+            join teachers t on t.id = t_ids[j]
+           where e.term_id = summer_id
+             and e.subject = any (t.subjects)
+             and s.grade = any (t.grades)
+             and not exists (select 1 from placements p
+                              where p.date = summer_start + d and p.student_id = e.student_id)
+           order by md5(e.student_id::text || d)
+           limit 1;
+          continue when sid is null;
+          insert into placements (date, period_id, teacher_id, student_id, subject)
+          values (summer_start + d, p_ids[i], t_ids[j], sid, subj);
+          n := n + 1;
+          sid := null;
+      end loop;
+      end loop;
     end loop;
   end loop;
 end;
