@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-noto), system-ui, sans-serif;
+  --font-sans: 'Noto Sans JP', system-ui, sans-serif;
 }
 
 :root { color-scheme: light; }
