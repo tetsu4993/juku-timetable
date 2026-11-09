@@ -1,5 +1,5 @@
 import type {
-  CellIsland, Island, School,
+  CellIsland, Island, School, SchoolMaterial,
   Availability, Enrollment, Exam, ExtraAttendee, Grade, Period, Placement, Score, Student, Subject, Teacher, TemplateSlot, Term, Weekday,
 } from '@/domain/types';
 import { createClient } from './supabase/client';
@@ -196,3 +196,15 @@ export async function lastPromotedYear(): Promise<number | null> {
 }
 /** 学年を1つ上げる。その年度に実行済みなら false */
 export const promoteGrades = (year: number) => run<boolean>(db().rpc('promote_grades', { p_year: year }));
+
+// ---- 学校の使用教材 ----
+export const toSchoolMaterial = (r: Row): SchoolMaterial =>
+  ({ id: r.id, schoolId: r.school_id, grade: r.grade, subject: r.subject, name: r.name, publisher: r.publisher, memo: r.memo });
+export const listSchoolMaterials = async (schoolId: string) =>
+  (await run<Row[]>(db().from('school_materials').select('*').eq('school_id', schoolId).order('created_at'))).map(toSchoolMaterial);
+export const upsertSchoolMaterial = (m: Omit<SchoolMaterial, 'id'> & { id?: string }) =>
+  run(db().from('school_materials').upsert({
+    ...(m.id ? { id: m.id } : {}), school_id: m.schoolId, grade: m.grade, subject: m.subject,
+    name: m.name, publisher: m.publisher, memo: m.memo,
+  }));
+export const deleteSchoolMaterial = (id: string) => run(db().from('school_materials').delete().eq('id', id));

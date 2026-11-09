@@ -26,3 +26,9 @@ test('段階2の行を変換する', async () => {
   expect(toScore({ exam_id: 'e', student_id: 's', subject: '英語', score: null }))
     .toEqual({ examId: 'e', studentId: 's', subject: '英語', score: null });
 });
+
+test('教材の行を変換する', async () => {
+  const { toSchoolMaterial } = await import('./repo');
+  expect(toSchoolMaterial({ id: 'm', school_id: 's', grade: '中1', subject: '英語', name: 'NEW HORIZON', publisher: '東京書籍', memo: '' }))
+    .toEqual({ id: 'm', schoolId: 's', grade: '中1', subject: '英語', name: 'NEW HORIZON', publisher: '東京書籍', memo: '' });
+});
