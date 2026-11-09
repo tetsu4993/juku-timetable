@@ -16,3 +16,13 @@ test('一意制約違反(23505)は AlreadyPlacedError になる', () => {
   expect(wrapError({ code: '23505', message: 'dup' })).toBeInstanceOf(AlreadyPlacedError);
   expect(wrapError({ code: '42501', message: 'denied' })).not.toBeInstanceOf(AlreadyPlacedError);
 });
+
+test('段階2の行を変換する', async () => {
+  const { toTemplateSlot, toExam, toScore } = await import('./repo');
+  expect(toTemplateSlot({ id: 'a', weekday: 2, period_id: 'p', teacher_id: 't', student_id: 's', subject: '数学' }))
+    .toEqual({ id: 'a', weekday: 2, periodId: 'p', teacherId: 't', studentId: 's', subject: '数学' });
+  expect(toExam({ id: 'e', name: '1学期中間', year: 2026, semester: 1, kind: 'midterm' }))
+    .toEqual({ id: 'e', name: '1学期中間', year: 2026, semester: 1, kind: 'midterm' });
+  expect(toScore({ exam_id: 'e', student_id: 's', subject: '英語', score: null }))
+    .toEqual({ examId: 'e', studentId: 's', subject: '英語', score: null });
+});

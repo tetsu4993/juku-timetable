@@ -1,5 +1,5 @@
 import type {
-  Availability, Enrollment, ExtraAttendee, Grade, Period, Placement, Student, Subject, Teacher, Term, Weekday,
+  Availability, Enrollment, Exam, ExtraAttendee, Grade, Period, Placement, Score, Student, Subject, Teacher, TemplateSlot, Term, Weekday,
 } from '@/domain/types';
 import { createClient } from './supabase/client';
 
@@ -33,6 +33,10 @@ export const toAvailability = (r: Row): Availability =>
 export const toPlacement = (r: Row): Placement =>
   ({ id: r.id, date: r.date, periodId: r.period_id, teacherId: r.teacher_id, studentId: r.student_id, subject: r.subject });
 export const toExtra = (r: Row): ExtraAttendee => ({ date: r.date, studentId: r.student_id });
+export const toTemplateSlot = (r: Row): TemplateSlot =>
+  ({ id: r.id, weekday: r.weekday, periodId: r.period_id, teacherId: r.teacher_id, studentId: r.student_id, subject: r.subject });
+export const toExam = (r: Row): Exam => ({ id: r.id, name: r.name, year: r.year, semester: r.semester, kind: r.kind });
+export const toScore = (r: Row): Score => ({ examId: r.exam_id, studentId: r.student_id, subject: r.subject, score: r.score });
 
 const db = () => createClient();
 
@@ -111,3 +115,53 @@ export async function addExtras(date: string, studentIds: string[]) {
   if (!studentIds.length) return;
   await run(db().from('extra_attendees').upsert(studentIds.map((s) => ({ date, student_id: s })), { onConflict: 'date,student_id', ignoreDuplicates: true }));
 }
+
+// ---- 曜日テンプレート ----
+export const listTemplateSlots = async (weekday?: Weekday) => {
+  let q = db().from('template_slots').select('*');
+  if (weekday !== undefined) q = q.eq('weekday', weekday);
+  return (await run<Row[]>(q)).map(toTemplateSlot);
+};
+export async function addTemplateSlot(s: Omit<TemplateSlot, 'id'>) {
+  await run(db().from('template_slots').insert({
+    weekday: s.weekday, period_id: s.periodId, teacher_id: s.teacherId, student_id: s.studentId, subject: s.subject,
+  }));
+}
+export const moveTemplateSlot = (id: string, periodId: string, teacherId: string) =>
+  run(db().from('template_slots').update({ period_id: periodId, teacher_id: teacherId }).eq('id', id));
+export const removeTemplateSlot = (id: string) => run(db().from('template_slots').delete().eq('id', id));
+
+const placementRow = (p: Omit<Placement, 'id'>) =>
+  ({ date: p.date, period_id: p.periodId, teacher_id: p.teacherId, student_id: p.studentId, subject: p.subject });
+
+/** その日にまだテンプレートを反映していなければ反映する。反映した場合 true */
+export async function applyTemplateIfNew(date: string, rows: Omit<Placement, 'id'>[]): Promise<boolean> {
+  const { error } = await db().from('day_status').insert({ date });
+  if (error) {
+    if (error.code === '23505') return false; // 他のタブなどで反映済み
+    throw wrapError(error);
+  }
+  if (rows.length) {
+    await run(db().from('placements').upsert(rows.map(placementRow), { onConflict: 'date,period_id,student_id', ignoreDuplicates: true }));
+  }
+  return true;
+}
+/** その日の配置を消して、テンプレートから作り直す */
+export async function resetDayToTemplate(date: string, rows: Omit<Placement, 'id'>[]) {
+  await run(db().from('placements').delete().eq('date', date));
+  await run(db().from('day_status').upsert({ date }, { onConflict: 'date' }));
+  if (rows.length) await run(db().from('placements').insert(rows.map(placementRow)));
+}
+
+// ---- 成績 ----
+export const listExams = async () => (await run<Row[]>(db().from('exams').select('*'))).map(toExam);
+export async function upsertExam(e: Omit<Exam, 'id'> & { id?: string }) {
+  await run(db().from('exams').upsert({ ...(e.id ? { id: e.id } : {}), name: e.name, year: e.year, semester: e.semester, kind: e.kind }));
+}
+export const deleteExam = (id: string) => run(db().from('exams').delete().eq('id', id));
+export const listScores = async (examId: string) =>
+  (await run<Row[]>(db().from('scores').select('*').eq('exam_id', examId))).map(toScore);
+export const listScoresForStudent = async (studentId: string) =>
+  (await run<Row[]>(db().from('scores').select('*').eq('student_id', studentId))).map(toScore);
+export const setScore = (examId: string, studentId: string, subject: Subject, score: number | null) =>
+  run(db().from('scores').upsert({ exam_id: examId, student_id: studentId, subject, score }, { onConflict: 'exam_id,student_id,subject' }));
