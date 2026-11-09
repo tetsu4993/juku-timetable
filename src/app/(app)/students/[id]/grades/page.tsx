@@ -105,7 +105,7 @@ export default function StudentGradesPage() {
             <section className="card p-3 break-inside-avoid">
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-sm font-bold">{subject}の推移</h2>
-                <select className={`${inputCls} w-32 print:hidden`} value={subject} onChange={(e) => setSubject(e.target.value as Subject)}>
+                <select className={`${inputCls} max-w-32 print:hidden`} value={subject} onChange={(e) => setSubject(e.target.value as Subject)}>
                   {(usedSubjects.length ? usedSubjects : SUBJECTS).map((s) => <option key={s}>{s}</option>)}
                 </select>
               </div>

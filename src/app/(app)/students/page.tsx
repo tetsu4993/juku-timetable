@@ -75,7 +75,7 @@ export default function StudentsPage() {
         </div>
       )}
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2 [&>select]:w-auto">
         <div className="flex rounded-lg border border-slate-200 bg-white p-0.5 text-sm shadow-sm">
           {[['在籍', false], ['卒業', true]].map(([label, g]) => (
             <button key={String(label)} onClick={() => setGraduated(g as boolean)}
@@ -84,12 +84,12 @@ export default function StudentsPage() {
         </div>
         <input className={`${inputCls} max-w-48`} placeholder="氏名で絞り込み" value={q} onChange={(e) => setQ(e.target.value)} />
         {!graduated && (
-          <select className={`${inputCls} w-28`} value={grade} onChange={(e) => setGrade(e.target.value)}>
+          <select className={`${inputCls} max-w-28`} value={grade} onChange={(e) => setGrade(e.target.value)}>
             <option value="">全学年</option>
             {GRADES.map((g) => <option key={g}>{g}</option>)}
           </select>
         )}
-        <select className={`${inputCls} w-40`} value={schoolId} onChange={(e) => setSchoolId(e.target.value)}>
+        <select className={`${inputCls} max-w-40`} value={schoolId} onChange={(e) => setSchoolId(e.target.value)}>
           <option value="">全学校</option>
           {data?.schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>

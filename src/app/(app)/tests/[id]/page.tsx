@@ -49,13 +49,13 @@ export default function ScoreEntryPage() {
       <PageTitle action={<Link href="/tests" className="text-sm text-indigo-600 hover:underline">← テスト一覧</Link>}>{data.exam.name} の点数入力</PageTitle>
       <div className="mb-3 flex flex-wrap items-center gap-3 text-sm">
         <label className="flex items-center gap-2">学年
-          <select className={`${inputCls} w-28`} value={grade} onChange={(e) => setGrade(e.target.value)}>
+          <select className={`${inputCls} max-w-28`} value={grade} onChange={(e) => setGrade(e.target.value)}>
             <option value="">すべて</option>
             {grades.map((g) => <option key={g}>{g}</option>)}
           </select>
         </label>
         <label className="flex items-center gap-2">学校
-          <select className={`${inputCls} w-40`} value={schoolId} onChange={(e) => setSchoolId(e.target.value)}>
+          <select className={`${inputCls} max-w-40`} value={schoolId} onChange={(e) => setSchoolId(e.target.value)}>
             <option value="">すべて</option>
             {data.schools.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
           </select>
