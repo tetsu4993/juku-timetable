@@ -55,7 +55,7 @@ export default function SchoolMaterialsPage() {
       </PageTitle>
       <p className="mb-4 text-sm text-slate-500">
         <Link href="/schools" className="text-indigo-600 hover:underline">← 学校一覧</Link>
-        　学年ごとに、学校で使っている教科書・ワークを登録します。定期テストの範囲確認や対策に使います。
+        　学年ごとに、学校で使っている教科書・ワークを登録します。教材名を押すと、目次から範囲を選んでAIで疑似テストを作れます。
       </p>
 
       <div className="mb-4 flex flex-wrap gap-1">
@@ -72,7 +72,7 @@ export default function SchoolMaterialsPage() {
         {rows.map((m, i) => (
           <tr key={m.id}>
             <td className="w-28 px-4 py-2 font-medium">{rows[i - 1]?.subject === m.subject ? '' : m.subject}</td>
-            <td className="px-4 py-2">{m.name}</td>
+            <td className="px-4 py-2"><Link href={`/materials/${m.id}`} className="text-indigo-600 hover:underline">{m.name}</Link></td>
             <td className="px-4 py-2 text-slate-600">{m.publisher || <span className="text-slate-300">—</span>}</td>
             <td className="px-4 py-2 text-slate-600">{m.memo}</td>
             <td className="whitespace-nowrap px-4 py-2 text-right">
