@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
-import { DIFFICULTIES, type Difficulty } from '@/domain/ai-test';
+import { DIFFICULTIES, testTypeLabel, type Difficulty } from '@/domain/ai-test';
 import { getGeneratedTest, getSchoolMaterial } from '@/lib/repo';
 import { Button, ErrorText, useLoad } from '@/components/ui';
 
@@ -36,7 +36,7 @@ export default function GeneratedTestPage() {
           <h1 className="text-2xl font-bold">{test.title}</h1>
           <p className="mt-1 text-sm text-slate-600">
             {material ? `${material.name}${material.publisher ? `（${material.publisher}）` : ''}　` : ''}
-            範囲：{test.unitNames.join('、')}　難易度：{DIFFICULTIES[test.difficulty as Difficulty] ?? test.difficulty}
+            種類：{testTypeLabel(material?.subject ?? '', test.testType)}　範囲：{test.unitNames.join('、')}　難易度：{DIFFICULTIES[test.difficulty as Difficulty] ?? test.difficulty}
           </p>
           <div className="mt-4 flex gap-8 text-sm">
             <span>名前＿＿＿＿＿＿＿＿＿＿＿＿</span><span>点数　　　／{test.questions.length}</span>
