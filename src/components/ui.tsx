@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export const WEEKDAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'] as const;
 
@@ -8,12 +8,15 @@ export const WEEKDAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'] 
 export function useLoad<T>(fn: () => Promise<T>, deps: unknown[] = []) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const latest = useRef(0);
   const reload = useCallback(async () => {
+    const id = ++latest.current; // 古い読み込みの結果で新しい表示を上書きしない
     try {
       setError(null);
-      setData(await fn());
+      const result = await fn();
+      if (id === latest.current) setData(result);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      if (id === latest.current) setError(e instanceof Error ? e.message : String(e));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
