@@ -39,7 +39,7 @@ export function Sidebar() {
         <button aria-label="メニュー" onClick={() => setOpen(!open)} className="text-xl">☰</button>
         <span className="font-bold">塾 時間割</span>
       </div>
-      <aside className={`${open ? 'block' : 'hidden'} fixed inset-y-0 left-0 z-50 w-56 shrink-0 flex-col bg-gradient-to-b from-slate-900 to-indigo-950 p-3 md:sticky md:top-0 md:flex md:h-screen print:hidden`}>
+      <aside className={`${open ? 'flex' : 'hidden'} fixed inset-y-0 left-0 z-50 w-56 shrink-0 flex-col overflow-y-auto bg-gradient-to-b from-slate-900 to-indigo-950 p-3 md:sticky md:top-0 md:flex md:h-screen print:hidden`}>
         <div className="mb-6 px-3 pt-2">
           <div className="text-lg font-bold tracking-wide text-white">塾 時間割</div>
           <div className="text-[11px] text-indigo-200/80">時間割・成績管理</div>
