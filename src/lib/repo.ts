@@ -1,5 +1,5 @@
 import type {
-  CellIsland, Island, School, SchoolMaterial,
+  CellIsland, GeneratedTest, Island, MaterialUnit, School, SchoolMaterial,
   Availability, Enrollment, Exam, ExtraAttendee, Grade, Period, Placement, Score, Student, Subject, Teacher, TemplateSlot, Term, Weekday,
 } from '@/domain/types';
 import { createClient } from './supabase/client';
@@ -208,3 +208,30 @@ export const upsertSchoolMaterial = (m: Omit<SchoolMaterial, 'id'> & { id?: stri
     name: m.name, publisher: m.publisher, memo: m.memo,
   }));
 export const deleteSchoolMaterial = (id: string) => run(db().from('school_materials').delete().eq('id', id));
+
+// ---- 教材の目次・疑似テスト ----
+export const toMaterialUnit = (r: Row): MaterialUnit => ({ id: r.id, materialId: r.material_id, name: r.name, sortOrder: r.sort_order });
+export const toGeneratedTest = (r: Row): GeneratedTest => ({
+  id: r.id, materialId: r.material_id, unitNames: r.unit_names, difficulty: r.difficulty,
+  title: r.title, questions: r.questions, createdAt: r.created_at,
+});
+export async function getSchoolMaterial(id: string): Promise<SchoolMaterial | null> {
+  const rows = await run<Row[]>(db().from('school_materials').select('*').eq('id', id));
+  return rows[0] ? toSchoolMaterial(rows[0]) : null;
+}
+export const listMaterialUnits = async (materialId: string) =>
+  (await run<Row[]>(db().from('material_units').select('*').eq('material_id', materialId).order('sort_order'))).map(toMaterialUnit);
+/** 単元をまとめて末尾に追加（1行1単元） */
+export async function addMaterialUnits(materialId: string, names: string[], startOrder: number) {
+  if (!names.length) return;
+  await run(db().from('material_units').insert(names.map((name, i) => ({ material_id: materialId, name, sort_order: startOrder + i + 1 }))));
+}
+export const renameMaterialUnit = (id: string, name: string) => run(db().from('material_units').update({ name }).eq('id', id));
+export const deleteMaterialUnit = (id: string) => run(db().from('material_units').delete().eq('id', id));
+export const listGeneratedTests = async (materialId: string) =>
+  (await run<Row[]>(db().from('generated_tests').select('*').eq('material_id', materialId).order('created_at', { ascending: false }))).map(toGeneratedTest);
+export async function getGeneratedTest(id: string): Promise<GeneratedTest | null> {
+  const rows = await run<Row[]>(db().from('generated_tests').select('*').eq('id', id));
+  return rows[0] ? toGeneratedTest(rows[0]) : null;
+}
+export const deleteGeneratedTest = (id: string) => run(db().from('generated_tests').delete().eq('id', id));

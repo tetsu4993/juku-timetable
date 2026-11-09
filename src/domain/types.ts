@@ -29,3 +29,6 @@ export interface Island { id: string; name: string; sortOrder: number }
 export interface CellIsland { periodId: string; teacherId: string; islandId: string }
 /** 学校・学年・科目ごとの使用教材（教科書・学校ワークなど） */
 export interface SchoolMaterial { id: string; schoolId: string; grade: Grade; subject: Subject; name: string; publisher: string; memo: string }
+export interface MaterialUnit { id: string; materialId: string; name: string; sortOrder: number }
+export interface TestQuestion { unit: string; question: string; choices: string[]; answer: string; explanation: string }
+export interface GeneratedTest { id: string; materialId: string; unitNames: string[]; difficulty: string; title: string; questions: TestQuestion[]; createdAt: string }
