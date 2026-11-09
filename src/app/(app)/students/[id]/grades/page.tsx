@@ -39,7 +39,7 @@ export default function StudentGradesPage() {
   }));
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-6xl">
       <style>{'@page { size: A4 portrait; margin: 12mm; }'}</style>
       <div className="mb-4 flex items-center justify-between print:hidden">
         <Link href="/students" className="text-sm text-indigo-600 hover:underline">← 生徒一覧</Link>
