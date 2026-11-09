@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diffFromPrevious, parseScore, sortExams, subjectAverages, totalOf } from './grades';
+import { coreTotal, diffFromPrevious, parseScore, sortExams, subjectAverages, totalOf } from './grades';
 import type { Exam, Score } from './types';
 
 const e = (id: string, year: number, semester: 1 | 2 | 3, kind: Exam['kind']): Exam => ({ id, name: id, year, semester, kind });
@@ -27,7 +27,8 @@ describe('diffFromPrevious', () => {
     s('2f', 'a', '国語', 72), s('2f', 'a', '数学', null), s('2f', 'a', '英語', 80),
   ];
   it('点数のある直前のテストと比べる。両方に値がある科目だけ差を出す', () => {
-    expect(diffFromPrevious(exams, scores, 'a', '2f')).toEqual({ total: 152 - 110, bySubject: { 国語: 12 } });
+    // 合計の増減は両方にある科目だけで比べる（中間5教科⇔期末9教科で合計がぶれないように）
+    expect(diffFromPrevious(exams, scores, 'a', '2f')).toEqual({ total: 12, bySubject: { 国語: 12 } });
   });
   it('前回がなければ増減なし', () => {
     expect(diffFromPrevious(exams, scores, 'a', '0f')).toEqual({ total: null, bySubject: {} });
@@ -46,4 +47,11 @@ describe('parseScore', () => {
     ['', null], ['  ', null], [' 85 ', 85], ['0', 0], ['100', 100],
     ['101', 'invalid'], ['-1', 'invalid'], ['7.5', 'invalid'], ['abc', 'invalid'],
   ])('%s → %s', (input, out) => expect(parseScore(input)).toBe(out));
+});
+
+describe('coreTotal', () => {
+  it('5教科（国数英理社）だけの合計、5教科が1つもなければ null', () => {
+    expect(coreTotal([s('x', 'a', '国語', 80), s('x', 'a', '音楽', 90), s('x', 'a', '数学', null)])).toBe(80);
+    expect(coreTotal([s('x', 'a', '音楽', 90)])).toBeNull();
+  });
 });

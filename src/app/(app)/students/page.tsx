@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { GRADES, SUBJECTS, type Grade, type Student, type Subject, type Weekday } from '@/domain/types';
 import { deleteStudent, listStudents, upsertStudent } from '@/lib/repo';
@@ -57,6 +58,7 @@ export default function StudentsPage() {
             <td className="px-3 py-2">{s.grade}</td>
             <td className="px-3 py-2">{describe(s)}</td>
             <td className="px-3 py-2 text-right whitespace-nowrap">
+              <Link href={`/students/${s.id}/grades`} className="mr-2 text-sm text-blue-600 hover:underline">成績</Link>
               <Button variant="ghost" onClick={() => { setSaveError(null); setDraft(s); }}>編集</Button>{' '}
               <Button variant="danger" onClick={() => remove(s)}>削除</Button>
             </td>

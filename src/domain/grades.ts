@@ -1,5 +1,7 @@
 import type { Exam, Score, Subject } from './types';
 
+export const CORE_SUBJECTS: Subject[] = ['国語', '数学', '英語', '理科', '社会'];
+
 const order = (e: Exam) => e.year * 100 + e.semester * 10 + (e.kind === 'midterm' ? 0 : 1);
 
 /** 年度→学期→中間・期末の昇順 */
@@ -24,12 +26,13 @@ export function diffFromPrevious(exams: Exam[], scores: Score[], studentId: stri
   const result: { total: number | null; bySubject: Partial<Record<Subject, number>> } = { total: null, bySubject: {} };
   if (!prev) return result;
   const now = of(examId), before = of(prev.id);
-  const nt = totalOf(now), bt = totalOf(before);
-  result.total = nt !== null && bt !== null ? nt - bt : null;
   const a = bySubject(now), b = bySubject(before);
   for (const k of Object.keys(a) as Subject[]) {
     if (b[k] !== undefined) result.bySubject[k] = a[k]! - b[k]!;
   }
+  // 合計の増減は両方にある科目だけで比べる（中間5教科⇔期末9教科で合計がぶれないように）
+  const common = Object.values(result.bySubject);
+  result.total = common.length ? common.reduce((x, y) => x + y, 0) : null;
   return result;
 }
 
@@ -54,3 +57,6 @@ export function parseScore(input: string): number | null | 'invalid' {
   const n = Number(v);
   return n <= 100 ? n : 'invalid';
 }
+
+/** 5教科（国数英理社）の合計。中間・期末をまたいで比べるときに使う */
+export const coreTotal = (scores: Score[]) => totalOf(scores.filter((s) => CORE_SUBJECTS.includes(s.subject)));
