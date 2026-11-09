@@ -4,12 +4,14 @@ import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } f
 import { useMemo, useState } from 'react';
 import { termForDate, studentsForDate, teachersForDate } from '@/domain/attendance';
 import { subjectsLeftToday } from '@/domain/pool';
+import { duplicateIslands } from '@/domain/school-year';
+import { IslandSelect } from '@/components/timetable/IslandSelect';
 import { templateToPlacements } from '@/domain/template';
 import { remainingBySubject } from '@/domain/remaining';
 import { weekdayOf, type Placement, type Subject } from '@/domain/types';
 import { canTeach, CAPACITY, isDoubleBooked, isOverCapacity } from '@/domain/warnings';
 import {
-  addExtras, addPlacement, AlreadyPlacedError, applyTemplateIfNew, listTemplateSlots, resetDayToTemplate, listAvailability, listEnrollments, listExtras, listPeriods,
+  addExtras, addPlacement, listCellIslands, listIslands, setCellIsland, AlreadyPlacedError, applyTemplateIfNew, listTemplateSlots, resetDayToTemplate, listAvailability, listEnrollments, listExtras, listPeriods,
   listPlacements, listPlacementsInRange, listStudents, listTeachers, listTerms, movePlacement, removePlacement,
 } from '@/lib/repo';
 import { Button, ErrorText, useLoad, WEEKDAY_LABELS } from '@/components/ui';
@@ -32,9 +34,10 @@ export default function TimetablePage() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
   const { data, error, reload } = useLoad(async () => {
-    const [terms, teachers, students, periods, extras] = await Promise.all([
-      listTerms(), listTeachers(), listStudents(), listPeriods(), listExtras(date),
+    const [terms, teachers, allStudents, periods, extras, islands] = await Promise.all([
+      listTerms(), listTeachers(), listStudents(), listPeriods(), listExtras(date), listIslands(),
     ]);
+    const active = allStudents.filter((s) => s.grade !== '卒業'); // 卒業生は来塾者・一覧に出さない（配置済みのチップは残す）
     const term = termForDate(terms, date);
     const [enrollments, availability, loaded] = await Promise.all([
       term ? listEnrollments(term.id) : Promise.resolve([]),
@@ -52,14 +55,15 @@ export default function TimetablePage() {
         placements = await listPlacements(date);
       }
     }
-    return { term, teachers, students, periods, extras, enrollments, availability, placements };
+    const cellIslands = await listCellIslands(date);
+    return { term, teachers, students: allStudents, active, periods, extras, enrollments, availability, placements, islands, cellIslands };
   }, [date]);
 
   const view = useMemo(() => {
     if (!data) return null;
-    const { term, teachers, students, enrollments, availability, extras, placements } = data;
+    const { term, teachers, active, enrollments, availability, extras, placements } = data;
     const dayTeachers = teachersForDate(teachers, date, term, availability);
-    const dayStudents = studentsForDate(students, date, term, enrollments, availability, extras);
+    const dayStudents = studentsForDate(active, date, term, enrollments, availability, extras);
     const todays = placements.filter((p) => p.date === date);
     const pool: PoolItem[] = dayStudents
       .map((s) => ({
@@ -69,7 +73,7 @@ export default function TimetablePage() {
       }))
       .filter((x) => x.subjects.length > 0 || (term?.kind !== 'kosyu' && !todays.some((p) => p.studentId === x.student.id)));
     const dayIds = new Set(dayStudents.map((s) => s.id));
-    const others = students.filter((s) => !dayIds.has(s.id));
+    const others = active.filter((s) => !dayIds.has(s.id));
     // 配置済みだが今日の来塾者でない先生の列も残す
     const colTeachers = [...dayTeachers, ...teachers.filter((t) => !dayTeachers.includes(t) && todays.some((p) => p.teacherId === t.id))];
     return { dayTeachers, colTeachers, pool, others, todays };
@@ -174,6 +178,10 @@ export default function TimetablePage() {
                         const inCell = view.todays.filter((p) => p.periodId === per.id && p.teacherId === t.id);
                         return (
                           <td key={t.id} className="border p-0 align-top">
+                            <IslandSelect islands={data.islands}
+                              value={data.cellIslands.find((c) => c.periodId === per.id && c.teacherId === t.id)?.islandId ?? null}
+                              duplicate={duplicateIslands(data.cellIslands, per.id).has(t.id)}
+                              onChange={(islandId) => act(() => setCellIsland(date, per.id, t.id, islandId))} />
                             <Cell dropId={`cell:${per.id}:${t.id}`} over={isOverCapacity(view.todays, date, per.id, t.id)}
                               className="flex flex-col items-start gap-1 p-1">
                               {inCell.map((p) => <PlacedChip key={p.id} p={p} data={data} teacherId={t.id} />)}

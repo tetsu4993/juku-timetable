@@ -5,16 +5,18 @@ import { useParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { parseScore, subjectAverages, totalOf } from '@/domain/grades';
 import { GRADES, SUBJECTS, type Subject } from '@/domain/types';
-import { listExams, listScores, listStudents, setScore } from '@/lib/repo';
+import { listExams, listSchools, listScores, listStudents, setScore } from '@/lib/repo';
+import { filterStudents } from '@/domain/school-year';
 import { ErrorText, inputCls, PageTitle, useLoad } from '@/components/ui';
 
 export default function ScoreEntryPage() {
   const { id } = useParams<{ id: string }>();
   const [grade, setGrade] = useState('');
+  const [schoolId, setSchoolId] = useState('');
   const [toast, setToast] = useState<string | null>(null);
   const { data, error, reload } = useLoad(async () => {
-    const [exams, students, scores] = await Promise.all([listExams(), listStudents(), listScores(id)]);
-    return { exam: exams.find((e) => e.id === id) ?? null, students, scores };
+    const [exams, students, scores, schools] = await Promise.all([listExams(), listStudents(), listScores(id), listSchools()]);
+    return { exam: exams.find((e) => e.id === id) ?? null, students, scores, schools };
   }, [id]);
 
   const notify = (m: string) => { setToast(m); setTimeout(() => setToast(null), 3000); };
@@ -36,8 +38,11 @@ export default function ScoreEntryPage() {
   if (!data) return <><ErrorText error={error} /><p className="text-slate-500">読み込み中…</p></>;
   if (!data.exam) return <p>テストが見つかりません。<Link href="/tests" className="text-indigo-600">一覧へ</Link></p>;
 
-  const shown = data.students.filter((s) => !grade || s.grade === grade);
-  const avg = subjectAverages(data.scores, id);
+  const shown = filterStudents(data.students, { grade, schoolId });
+  const shownIds = new Set(shown.map((s) => s.id));
+  // 平均点は絞り込んだ生徒だけで出す
+  const avg = subjectAverages(data.scores.filter((s) => shownIds.has(s.studentId)), id);
+  const schoolName = (sid?: string | null) => data.schools.find((x) => x.id === sid)?.name;
 
   return (
     <>
@@ -49,10 +54,16 @@ export default function ScoreEntryPage() {
             {grades.map((g) => <option key={g}>{g}</option>)}
           </select>
         </label>
+        <label className="flex items-center gap-2">学校
+          <select className={`${inputCls} w-40`} value={schoolId} onChange={(e) => setSchoolId(e.target.value)}>
+            <option value="">すべて</option>
+            {data.schools.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+          </select>
+        </label>
         <span className="text-slate-500">欄を離れると保存します。空欄は合計・平均に含めません。</span>
       </div>
       <ErrorText error={error} />
-      <div className="overflow-x-auto card">
+      <div className="card overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-slate-100">
             <tr>
@@ -66,7 +77,7 @@ export default function ScoreEntryPage() {
               <tr key={st.id}>
                 <td className="whitespace-nowrap px-2 py-1">
                   <Link href={`/students/${st.id}/grades`} className="hover:underline">{st.name}</Link>
-                  <span className="ml-1 text-xs text-slate-500">{st.grade}</span>
+                  <span className="ml-1 text-xs text-slate-500">{st.grade}{schoolName(st.schoolId) ? ` ・ ${schoolName(st.schoolId)}` : ''}</span>
                 </td>
                 {SUBJECTS.map((sub) => {
                   const v = valueOf(st.id, sub);
@@ -85,7 +96,7 @@ export default function ScoreEntryPage() {
           </tbody>
           <tfoot className="bg-slate-50 text-xs">
             <tr>
-              <td className="px-2 py-2 font-medium">平均点</td>
+              <td className="px-2 py-2 font-medium">平均点{grade || schoolId ? '（絞り込み）' : ''}</td>
               {SUBJECTS.map((s) => <td key={s} className="px-1 py-2 text-center">{avg[s] ?? '—'}</td>)}
               <td />
             </tr>

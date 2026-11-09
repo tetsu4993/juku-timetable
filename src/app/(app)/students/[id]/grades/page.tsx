@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { coreTotal, diffFromPrevious, sortExams, totalOf } from '@/domain/grades';
 import { SUBJECTS, type Subject } from '@/domain/types';
-import { listExams, listScoresForStudent, listStudents } from '@/lib/repo';
+import { listExams, listSchools, listScoresForStudent, listStudents } from '@/lib/repo';
 import { Button, ErrorText, inputCls, useLoad } from '@/components/ui';
 import { shortExamName } from '@/components/exams';
 
@@ -19,8 +19,9 @@ export default function StudentGradesPage() {
   const { id } = useParams<{ id: string }>();
   const [subject, setSubject] = useState<Subject>('数学');
   const { data, error } = useLoad(async () => {
-    const [students, exams, scores] = await Promise.all([listStudents(), listExams(), listScoresForStudent(id)]);
-    return { student: students.find((s) => s.id === id) ?? null, exams: sortExams(exams), scores };
+    const [students, exams, scores, schools] = await Promise.all([listStudents(), listExams(), listScoresForStudent(id), listSchools()]);
+    const student = students.find((s) => s.id === id) ?? null;
+    return { student, school: schools.find((x) => x.id === student?.schoolId)?.name ?? null, exams: sortExams(exams), scores };
   }, [id]);
 
   if (!data) return <><ErrorText error={error} /><p className="text-slate-500">読み込み中…</p></>;
@@ -45,7 +46,7 @@ export default function StudentGradesPage() {
         <Button variant="ghost" onClick={() => window.print()}>印刷（面談資料）</Button>
       </div>
       <h1 className="text-xl font-bold">{student.name} さん　定期テスト成績</h1>
-      <p className="mb-4 text-sm text-slate-500">{student.grade}　／　↑↓ は前回のテストからの増減（合計の増減は、両方のテストにある科目だけで比べています）</p>
+      <p className="mb-4 text-sm text-slate-500">{student.grade}{data.school ? `（${data.school}）` : ''}　／　↑↓ は前回のテストからの増減（合計の増減は、両方のテストにある科目だけで比べています）</p>
       <ErrorText error={error} />
 
       {exams.length === 0 ? (

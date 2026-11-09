@@ -4,8 +4,10 @@ import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } f
 import { useMemo, useState } from 'react';
 import type { Subject, TemplateSlot, Weekday } from '@/domain/types';
 import { canTeach, CAPACITY } from '@/domain/warnings';
+import { duplicateIslands } from '@/domain/school-year';
+import { IslandSelect } from '@/components/timetable/IslandSelect';
 import {
-  addTemplateSlot, AlreadyPlacedError, listPeriods, listStudents, listTeachers, listTemplateSlots, moveTemplateSlot, removeTemplateSlot,
+  addTemplateSlot, AlreadyPlacedError, listIslands, listTemplateIslands, setTemplateIsland, listPeriods, listStudents, listTeachers, listTemplateSlots, moveTemplateSlot, removeTemplateSlot,
 } from '@/lib/repo';
 import { ErrorText, PageTitle, useLoad, WEEKDAY_LABELS } from '@/components/ui';
 import { Cell } from '@/components/timetable/Cell';
@@ -21,14 +23,17 @@ export default function TemplatesPage() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
   const { data, error, reload } = useLoad(async () => {
-    const [teachers, students, periods, slots] = await Promise.all([listTeachers(), listStudents(), listPeriods(), listTemplateSlots(wd)]);
-    return { teachers, students, periods, slots };
+    const [teachers, allStudents, periods, slots, islands, cellIslands] = await Promise.all([
+      listTeachers(), listStudents(), listPeriods(), listTemplateSlots(wd), listIslands(), listTemplateIslands(wd),
+    ]);
+    // 卒業生は未配置の一覧に出さない（配置済みのチップは残す）
+    return { teachers, students: allStudents, active: allStudents.filter((s) => s.grade !== '卒業'), periods, slots, islands, cellIslands };
   }, [wd]);
 
   const view = useMemo(() => {
     if (!data) return null;
     const cols = data.teachers.filter((t) => t.weekdays.includes(wd) || data.slots.some((s) => s.teacherId === t.id));
-    const pool = data.students
+    const pool = data.active
       .map((s) => ({
         student: s,
         subjects: s.regular.filter((r) => r.weekday === wd).map((r) => r.subject)
@@ -126,6 +131,10 @@ export default function TemplatesPage() {
                         const inCell = data.slots.filter((s) => s.periodId === per.id && s.teacherId === t.id);
                         return (
                           <td key={t.id} className="border p-0 align-top">
+                            <IslandSelect islands={data.islands}
+                              value={data.cellIslands.find((c) => c.periodId === per.id && c.teacherId === t.id)?.islandId ?? null}
+                              duplicate={duplicateIslands(data.cellIslands, per.id).has(t.id)}
+                              onChange={(islandId) => act(() => setTemplateIsland(wd, per.id, t.id, islandId))} />
                             <Cell dropId={`cell:${per.id}:${t.id}`} over={inCell.length > CAPACITY} className="flex flex-col items-start gap-1 p-1">
                               {inCell.map((s) => {
                                 const st = data.students.find((x) => x.id === s.studentId);
