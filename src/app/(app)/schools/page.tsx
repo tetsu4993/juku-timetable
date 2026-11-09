@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import type { School } from '@/domain/types';
 import { deleteSchool, listSchools, upsertSchool } from '@/lib/repo';
@@ -30,9 +31,10 @@ export default function SchoolsPage() {
       <Table head={['学校名', '種別', '']}>
         {data?.map((s) => (
           <tr key={s.id}>
-            <td className="px-4 py-2 font-medium">{s.name}</td>
+            <td className="px-4 py-2 font-medium"><Link href={`/schools/${s.id}`} className="hover:underline">{s.name}</Link></td>
             <td className="px-4 py-2">{s.kind}学校</td>
             <td className="whitespace-nowrap px-4 py-2 text-right">
+              <Link href={`/schools/${s.id}`} className="mr-2 text-sm text-indigo-600 hover:underline">学年・科目・教材</Link>
               <Button variant="ghost" onClick={() => { setSaveError(null); setDraft(s); }}>編集</Button>{' '}
               <Button variant="danger" onClick={() => remove(s)}>削除</Button>
             </td>
