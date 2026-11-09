@@ -17,7 +17,7 @@ export function SidePanel({ dateLabel, teachers, pool, others, onAddExtras }: {
   const shown = others.filter((s) => s.name.includes(q) || s.grade.includes(q));
 
   return (
-    <aside className="w-[30%] min-w-72 space-y-4">
+    <aside className="w-80 shrink-0 space-y-4">
       <section className="card p-3">
         <h2 className="mb-2 font-bold">{dateLabel} の来塾者</h2>
         <p className="mb-1 text-xs font-medium text-slate-500">先生（{teachers.length}人）</p>
