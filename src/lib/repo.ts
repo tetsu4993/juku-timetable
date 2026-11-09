@@ -134,24 +134,12 @@ export const removeTemplateSlot = (id: string) => run(db().from('template_slots'
 const placementRow = (p: Omit<Placement, 'id'>) =>
   ({ date: p.date, period_id: p.periodId, teacher_id: p.teacherId, student_id: p.studentId, subject: p.subject });
 
-/** その日にまだテンプレートを反映していなければ反映する。反映した場合 true */
-export async function applyTemplateIfNew(date: string, rows: Omit<Placement, 'id'>[]): Promise<boolean> {
-  const { error } = await db().from('day_status').insert({ date });
-  if (error) {
-    if (error.code === '23505') return false; // 他のタブなどで反映済み
-    throw wrapError(error);
-  }
-  if (rows.length) {
-    await run(db().from('placements').upsert(rows.map(placementRow), { onConflict: 'date,period_id,student_id', ignoreDuplicates: true }));
-  }
-  return true;
-}
-/** その日の配置を消して、テンプレートから作り直す */
-export async function resetDayToTemplate(date: string, rows: Omit<Placement, 'id'>[]) {
-  await run(db().from('placements').delete().eq('date', date));
-  await run(db().from('day_status').upsert({ date }, { onConflict: 'date' }));
-  if (rows.length) await run(db().from('placements').insert(rows.map(placementRow)));
-}
+/** その日にまだテンプレートを反映していなければ反映する（DB側で1トランザクション）。反映した場合 true */
+export const applyTemplateIfNew = (date: string, rows: Omit<Placement, 'id'>[]) =>
+  run<boolean>(db().rpc('apply_template', { p_date: date, p_rows: rows.map(placementRow) }));
+/** その日の配置を消して、テンプレートから作り直す（DB側で1トランザクション） */
+export const resetDayToTemplate = (date: string, rows: Omit<Placement, 'id'>[]) =>
+  run(db().rpc('reset_day_to_template', { p_date: date, p_rows: rows.map(placementRow) }));
 
 // ---- 成績 ----
 export const listExams = async () => (await run<Row[]>(db().from('exams').select('*'))).map(toExam);

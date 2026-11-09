@@ -46,7 +46,11 @@ export default function TimetablePage() {
     if (term?.kind === 'regular' && loaded.length === 0) {
       const rows = templateToPlacements(await listTemplateSlots(weekdayOf(date)), date, term, teachers, availability);
       // 反映する行がない日は記録しない（後からテンプレートを作っても反映されるように）
-      if (rows.length > 0 && await applyTemplateIfNew(date, rows)) placements = await listPlacements(date);
+      // 自分が反映した場合も、他の読み込みが先に反映していた場合も、最新の配置を読み直す
+      if (rows.length > 0) {
+        await applyTemplateIfNew(date, rows);
+        placements = await listPlacements(date);
+      }
     }
     return { term, teachers, students, periods, extras, enrollments, availability, placements };
   }, [date]);
@@ -116,7 +120,9 @@ export default function TimetablePage() {
   async function resetToTemplate() {
     if (!data?.term || data.term.kind !== 'regular') return;
     if (!confirm('この日の変更をすべて消して、曜日テンプレートどおりに戻します。よろしいですか？')) return;
-    const rows = templateToPlacements(await listTemplateSlots(weekdayOf(date)), date, data.term, data.teachers, data.availability);
+    // 来塾可否・先生は押した時点の最新を使う
+    const [teachers, availability] = await Promise.all([listTeachers(), listAvailability(data.term.id)]);
+    const rows = templateToPlacements(await listTemplateSlots(weekdayOf(date)), date, data.term, teachers, availability);
     act(() => resetDayToTemplate(date, rows));
   }
 
