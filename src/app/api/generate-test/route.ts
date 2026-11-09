@@ -3,7 +3,7 @@ import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { createClient as createAdmin } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { AI_DAILY_LIMIT, DIFFICULTIES, jstDay, parseTestRequest } from '@/domain/ai-test';
+import { AI_DAILY_LIMIT, DIFFICULTIES, jstDay, parseTestRequest, testTypesFor } from '@/domain/ai-test';
 import { createClient } from '@/lib/supabase/server';
 
 // AIの応答を待つ時間（秒）。Vercel の関数の上限時間
@@ -58,6 +58,10 @@ export async function POST(req: Request) {
   if (!material || !units || units.length !== unitIds.length) {
     return NextResponse.json({ error: '教材または範囲が見つかりません' }, { status: 404 });
   }
+  // テストの種類は、その教材の科目にあるものだけ受け付ける
+  const checked = parseTestRequest(parsed.value, material.subject);
+  if (!checked.ok) return NextResponse.json({ error: checked.error }, { status: 400 });
+  const testType = testTypesFor(material.subject).find((t) => t.key === checked.value.testType)!;
 
   // 1日の上限（全体で AI_DAILY_LIMIT 回）。同時に押されても超えない
   const day = jstDay(new Date());
@@ -80,9 +84,10 @@ export async function POST(req: Request) {
           `科目：${material.subject}`,
           `教材：${material.name}${material.publisher ? `（${material.publisher}）` : ''}`,
           `範囲（単元）：\n${unitNames.map((n) => `- ${n}`).join('\n')}`,
+          `テストの種類：${testType.label}（${testType.instruction}）`,
           `難易度：${DIFFICULTIES[difficulty]}`,
           `問題数：${count}問`,
-          'タイトルは「（学年）（科目） 疑似テスト」の形にしてください。',
+          `タイトルは「（学年）（科目） ${testType.label === '総合' ? '' : `${testType.label}`}疑似テスト」の形にしてください。`,
         ].join('\n'),
       }],
     });
@@ -94,7 +99,7 @@ export async function POST(req: Request) {
 
     const test = response.parsed_output;
     const { data: saved, error } = await supabase.from('generated_tests').insert({
-      material_id: materialId, unit_names: unitNames, difficulty,
+      material_id: materialId, unit_names: unitNames, difficulty, test_type: testType.key,
       title: test.title, questions: test.questions.slice(0, count),
     }).select('id').single();
     if (error || !saved) throw new Error(error?.message ?? 'save failed');
