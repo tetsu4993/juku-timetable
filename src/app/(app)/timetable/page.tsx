@@ -4,11 +4,12 @@ import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } f
 import { useMemo, useState } from 'react';
 import { termForDate, studentsForDate, teachersForDate } from '@/domain/attendance';
 import { subjectsLeftToday } from '@/domain/pool';
+import { templateToPlacements } from '@/domain/template';
 import { remainingBySubject } from '@/domain/remaining';
 import { weekdayOf, type Placement, type Subject } from '@/domain/types';
 import { canTeach, CAPACITY, isDoubleBooked, isOverCapacity } from '@/domain/warnings';
 import {
-  addExtras, addPlacement, AlreadyPlacedError, listAvailability, listEnrollments, listExtras, listPeriods,
+  addExtras, addPlacement, AlreadyPlacedError, applyTemplateIfNew, listTemplateSlots, resetDayToTemplate, listAvailability, listEnrollments, listExtras, listPeriods,
   listPlacements, listPlacementsInRange, listStudents, listTeachers, listTerms, movePlacement, removePlacement,
 } from '@/lib/repo';
 import { Button, ErrorText, useLoad, WEEKDAY_LABELS } from '@/components/ui';
@@ -35,11 +36,18 @@ export default function TimetablePage() {
       listTerms(), listTeachers(), listStudents(), listPeriods(), listExtras(date),
     ]);
     const term = termForDate(terms, date);
-    const [enrollments, availability, placements] = await Promise.all([
+    const [enrollments, availability, loaded] = await Promise.all([
       term ? listEnrollments(term.id) : Promise.resolve([]),
       term ? listAvailability(term.id) : Promise.resolve([]),
       term?.kind === 'kosyu' ? listPlacementsInRange(term.startDate, term.endDate) : listPlacements(date),
     ]);
+    let placements = loaded;
+    // 通常期で、その日の配置がまだなければ曜日テンプレートを反映（反映済みの日は何もしない）
+    if (term?.kind === 'regular' && loaded.length === 0) {
+      const rows = templateToPlacements(await listTemplateSlots(weekdayOf(date)), date, term, teachers, availability);
+      // 反映する行がない日は記録しない（後からテンプレートを作っても反映されるように）
+      if (rows.length > 0 && await applyTemplateIfNew(date, rows)) placements = await listPlacements(date);
+    }
     return { term, teachers, students, periods, extras, enrollments, availability, placements };
   }, [date]);
 
@@ -105,25 +113,38 @@ export default function TimetablePage() {
     }
   }
 
+  async function resetToTemplate() {
+    if (!data?.term || data.term.kind !== 'regular') return;
+    if (!confirm('この日の変更をすべて消して、曜日テンプレートどおりに戻します。よろしいですか？')) return;
+    const rows = templateToPlacements(await listTemplateSlots(weekdayOf(date)), date, data.term, data.teachers, data.availability);
+    act(() => resetDayToTemplate(date, rows));
+  }
+
   const wd = weekdayOf(date);
   const dateLabel = `${date.slice(5).replace('-', '/')}（${WEEKDAY_LABELS[wd]}）`;
 
   return (
     <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <style>{"@page { size: A4 landscape; margin: 10mm; }"}</style>
+      <h1 className="mb-2 hidden text-lg font-bold print:block">{dateLabel} 時間割</h1>
+      <div className="mb-4 flex flex-wrap items-center gap-2 print:hidden">
         <Button variant="ghost" onClick={() => setDate(shift(date, -1))}>← 前日</Button>
         <input type="date" className="w-44 rounded border border-slate-300 px-2 py-1.5 text-sm" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} />
         <Button variant="ghost" onClick={() => setDate(shift(date, 1))}>翌日 →</Button>
         <span className="ml-2 rounded bg-slate-200 px-2 py-1 text-sm">
           {data?.term ? `${data.term.name}（${data.term.kind === 'kosyu' ? '講習' : '通常期'}）` : '期間外'}
         </span>
-        <span className="text-xs text-slate-500">赤いマス＝先生1人に{CAPACITY}人超え／⚠＝担当外の科目・学年</span>
+        <span className="ml-auto flex gap-2">
+          {data?.term?.kind === 'regular' && <Button variant="ghost" onClick={resetToTemplate}>テンプレートに戻す</Button>}
+          <Button variant="ghost" onClick={() => window.print()}>印刷</Button>
+        </span>
+        <span className="w-full text-xs text-slate-500">赤いマス＝先生1人に{CAPACITY}人超え／⚠＝担当外の科目・学年</span>
       </div>
       <ErrorText error={error} />
       {!view || !data ? <p className="text-slate-500">読み込み中…</p> : (
         <div className="flex gap-4">
-          <SidePanel dateLabel={dateLabel} teachers={view.dayTeachers} pool={view.pool} others={view.others}
-            onAddExtras={(ids) => act(() => addExtras(date, ids))} />
+          <div className="contents print:hidden"><SidePanel dateLabel={dateLabel} teachers={view.dayTeachers} pool={view.pool} others={view.others}
+            onAddExtras={(ids) => act(() => addExtras(date, ids))} /></div>
           <div className="flex-1 overflow-x-auto">
             {data.periods.length === 0 || view.colTeachers.length === 0 ? (
               <p className="rounded border bg-white p-6 text-center text-slate-500">
