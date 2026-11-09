@@ -27,3 +27,5 @@ export interface Score { examId: string; studentId: string; subject: Subject; sc
 export interface School { id: string; name: string; kind: '小' | '中' | '高' }
 export interface Island { id: string; name: string; sortOrder: number }
 export interface CellIsland { periodId: string; teacherId: string; islandId: string }
+/** 学校・学年・科目ごとの使用教材（教科書・学校ワークなど） */
+export interface SchoolMaterial { id: string; schoolId: string; grade: Grade; subject: Subject; name: string; publisher: string; memo: string }
