@@ -1,0 +1,35 @@
+# CI：feature → develop → main の各段階で、テスト・型チェック・ビルドを自動実行する
+# 本番デプロイ（CD）は Vercel の Git 連携が main への push で自動実行する
+name: CI
+
+on:
+  push:
+    branches: [main, develop, 'feature_*', 'feature/**']
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # ビルドに必要な公開用の値（ダミー）。本物のキーは Vercel 側にだけ置く
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: dummy-publishable-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: 型チェック
+        run: npx tsc --noEmit
+      - name: テスト
+        run: npx vitest run
+      - name: ビルド
+        run: npx next build
