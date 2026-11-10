@@ -119,7 +119,7 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'ログインしてください' }, { status: 401 });
   const sb = admin();
-  const { data } = sb ? await sb.from('ai_usage').select('count').eq('day', jstDay(new Date())).maybeSingle() : { data: null };
+  const { data } = sb ? await sb.from('ai_usage').select('count').eq('day', jstDay(new Date())).eq('kind', 'test').maybeSingle() : { data: null };
   return NextResponse.json({
     limit: AI_DAILY_LIMIT,
     remaining: Math.max(0, AI_DAILY_LIMIT - (data?.count ?? 0)),
