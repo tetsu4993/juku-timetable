@@ -30,3 +30,15 @@ export const NEIGHBORS: Record<string, string[]> = {
 
 /** その都道府県と隣の都道府県のコード（先頭が自県） */
 export const regionFor = (code: string): string[] => (PREFECTURES[code] ? [code, ...NEIGHBORS[code]] : []);
+
+/** 現在地の県から見た近さ（0：現在地の県、1：隣県、2：その他） */
+export const proximityRank = (home: string, code: string): 0 | 1 | 2 =>
+  code === home ? 0 : NEIGHBORS[home]?.includes(code) ? 1 : 2;
+
+/** 近い順（現在地 → 隣県 → その他。同じ順位は県コード → 名前）に並べた新しい配列 */
+export function sortByProximity<T extends { prefCode: string; name: string }>(list: T[], home: string): T[] {
+  return [...list].sort((a, b) =>
+    proximityRank(home, a.prefCode) - proximityRank(home, b.prefCode)
+    || a.prefCode.localeCompare(b.prefCode)
+    || a.name.localeCompare(b.name, 'ja'));
+}
