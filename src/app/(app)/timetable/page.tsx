@@ -1,7 +1,8 @@
 'use client';
 
 import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
-import { useMemo, useState } from 'react';
+import { LessonRecordModal, type RecordContext } from '@/components/LessonRecordModal';
+import { useMemo, useRef, useState } from 'react';
 import { termForDate, studentsForDate, teachersForDate } from '@/domain/attendance';
 import { subjectsLeftToday } from '@/domain/pool';
 import { duplicateIslands } from '@/domain/school-year';
@@ -11,7 +12,7 @@ import { remainingBySubject } from '@/domain/remaining';
 import { weekdayOf, type Placement, type Subject } from '@/domain/types';
 import { canTeach, CAPACITY, isDoubleBooked, isOverCapacity } from '@/domain/warnings';
 import {
-  addExtras, addPlacement, listCellIslands, listIslands, setCellIsland, AlreadyPlacedError, applyTemplateIfNew, listTemplateSlots, resetDayToTemplate, listAvailability, listEnrollments, listExtras, listPeriods,
+  addExtras, addPlacement, listCellIslands, listLessonRecordsOn, listIslands, setCellIsland, AlreadyPlacedError, applyTemplateIfNew, listTemplateSlots, resetDayToTemplate, listAvailability, listEnrollments, listExtras, listPeriods,
   listPlacements, listPlacementsInRange, listStudents, listTeachers, listTerms, movePlacement, removePlacement,
 } from '@/lib/repo';
 import { Button, ErrorText, useLoad, WEEKDAY_LABELS } from '@/components/ui';
@@ -55,8 +56,8 @@ export default function TimetablePage() {
         placements = await listPlacements(date);
       }
     }
-    const cellIslands = await listCellIslands(date);
-    return { term, teachers, students: allStudents, active, periods, extras, enrollments, availability, placements, islands, cellIslands };
+    const [cellIslands, records] = await Promise.all([listCellIslands(date), listLessonRecordsOn(date)]);
+    return { term, teachers, students: allStudents, active, periods, extras, enrollments, availability, placements, islands, cellIslands, records };
   }, [date]);
 
   const view = useMemo(() => {
@@ -90,7 +91,22 @@ export default function TimetablePage() {
     await reload();
   }
 
+  const [recordCtx, setRecordCtx] = useState<RecordContext | null>(null);
+  const lastDrag = useRef(0);
+  // 配置済みのチップをクリック → 授業記録（ドラッグ直後のクリックは無視）
+  function openRecord(p: Placement) {
+    if (!data || Date.now() - lastDrag.current < 400) return;
+    const student = data.students.find((s) => s.id === p.studentId);
+    if (!student) return;
+    const teacher = data.teachers.find((t) => t.id === p.teacherId);
+    setRecordCtx({
+      student, date, subject: p.subject, periodId: p.periodId, teacherId: p.teacherId, teacherName: teacher?.name ?? '',
+      placementId: p.id, record: data.records.find((r) => r.placementId === p.id) ?? null,
+    });
+  }
+
   function onDragEnd(e: DragEndEvent) {
+    lastDrag.current = Date.now();
     if (!data || !view || !e.over) return;
     const [kind, id] = String(e.active.id).split(':');
     const target = String(e.over.id);
@@ -184,7 +200,8 @@ export default function TimetablePage() {
                               onChange={(islandId) => act(() => setCellIsland(date, per.id, t.id, islandId))} />
                             <Cell dropId={`cell:${per.id}:${t.id}`} over={isOverCapacity(view.todays, date, per.id, t.id)}
                               className="flex flex-col items-start gap-1 p-1">
-                              {inCell.map((p) => <PlacedChip key={p.id} p={p} data={data} teacherId={t.id} />)}
+                              {inCell.map((p) => <PlacedChip key={p.id} p={p} data={data} teacherId={t.id}
+                                recorded={data.records.some((r) => r.placementId === p.id)} onOpen={() => openRecord(p)} />)}
                             </Cell>
                           </td>
                         );
@@ -198,6 +215,9 @@ export default function TimetablePage() {
         </div>
       )}
 
+      {recordCtx && (
+        <LessonRecordModal ctx={recordCtx} onClose={() => setRecordCtx(null)} onSaved={() => { setRecordCtx(null); reload(); }} />
+      )}
       {picker && data && (
         <SubjectPicker
           studentName={data.students.find((s) => s.id === picker.studentId)?.name ?? ''}
@@ -216,8 +236,10 @@ export default function TimetablePage() {
   );
 }
 
-function PlacedChip({ p, data, teacherId }: {
+function PlacedChip({ p, data, teacherId, recorded, onOpen }: {
   p: Placement;
+  recorded: boolean;
+  onOpen: () => void;
   data: { students: { id: string; name: string; grade: import('@/domain/types').Grade }[]; teachers: import('@/domain/types').Teacher[] };
   teacherId: string;
 }) {
@@ -225,5 +247,5 @@ function PlacedChip({ p, data, teacherId }: {
   const t = data.teachers.find((x) => x.id === teacherId);
   if (!s) return null;
   const warn = t && !canTeach(t, s.grade, p.subject) ? `担当外：${t.name}先生は${s.grade}の${p.subject}の担当ではありません` : undefined;
-  return <StudentChip dragId={`placement:${p.id}`} label={s.name} sub={`${s.grade} ${p.subject}`} warn={warn} />;
+  return <StudentChip dragId={`placement:${p.id}`} label={s.name} sub={`${s.grade} ${p.subject}`} warn={warn} mark={recorded ? '📝' : undefined} onClick={onOpen} />;
 }
