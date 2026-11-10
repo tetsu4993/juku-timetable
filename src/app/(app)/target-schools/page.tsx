@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { PREFECTURES } from '@/domain/prefectures';
+import { PREFECTURES, proximityRank, sortByProximity } from '@/domain/prefectures';
 import type { TargetSchool } from '@/domain/types';
 import { listTargetRegions, listTargetSchools, updateTargetSchoolInfo } from '@/lib/repo';
 import { Button, ErrorText, Field, inputCls, Modal, PageTitle, Table, useLoad } from '@/components/ui';
@@ -32,12 +32,20 @@ export default function TargetSchoolsPage() {
   const [est, setEst] = useState('');
   const [q, setQ] = useState('');
   const [onlyResearched, setOnlyResearched] = useState(false);
+  const [order, setOrder] = useState<'near' | 'default'>('near');
   const [limit, setLimit] = useState(PAGE);
   const [detail, setDetail] = useState<TargetSchool | null>(null);
 
-  const filtered = useMemo(() => (data?.schools ?? []).filter((s) =>
-    (!kind || s.kind === kind) && (!pref || s.prefCode === pref) && (!est || s.establishment === est)
-    && (!q || s.name.includes(q) || s.address.includes(q)) && (!onlyResearched || s.researchedAt)), [data, kind, pref, est, q, onlyResearched]);
+  const home = located?.prefCode;
+  const filtered = useMemo(() => {
+    const list = (data?.schools ?? []).filter((s) =>
+      (!kind || s.kind === kind)
+      && (!pref || (pref === 'near' ? !!home && proximityRank(home, s.prefCode) < 2 : s.prefCode === pref))
+      && (!est || s.establishment === est)
+      && (!q || s.name.includes(q) || s.address.includes(q)) && (!onlyResearched || s.researchedAt));
+    return home && order === 'near' ? sortByProximity(list, home) : list;
+  }, [data, kind, pref, est, q, onlyResearched, home, order]);
+  const prefLabel = (c: string) => PREFECTURES[c] + (!home ? '' : c === home ? '（現在地）' : proximityRank(home, c) === 1 ? '（隣県）' : '');
 
   function locate() {
     if (!navigator.geolocation) return setNotice({ ok: false, text: 'このブラウザでは位置情報を使えません' });
@@ -127,10 +135,16 @@ export default function TargetSchoolsPage() {
             <select className={`${inputCls} max-w-28`} value={kind} onChange={(e) => setKind(e.target.value)}>
               <option value="">中学・高校</option><option>中学</option><option>高校</option>
             </select>
-            <select className={`${inputCls} max-w-36`} value={pref} onChange={(e) => setPref(e.target.value)}>
+            <select className={`${inputCls} max-w-44`} value={pref} onChange={(e) => setPref(e.target.value)}>
               <option value="">全地域</option>
-              {data?.regions.map((c) => <option key={c} value={c}>{PREFECTURES[c]}</option>)}
+              {home && <option value="near">現在地＋隣県</option>}
+              {data?.regions.map((c) => <option key={c} value={c}>{prefLabel(c)}</option>)}
             </select>
+            {home && (
+              <select className={`${inputCls} max-w-28`} value={order} onChange={(e) => setOrder(e.target.value as 'near' | 'default')} aria-label="並び順">
+                <option value="near">近い順</option><option value="default">標準</option>
+              </select>
+            )}
             <select className={`${inputCls} max-w-28`} value={est} onChange={(e) => setEst(e.target.value)}>
               <option value="">国公私立</option><option>国立</option><option>公立</option><option>私立</option>
             </select>
