@@ -14,6 +14,7 @@ const MASTERS = [
   { href: '/students', label: '生徒' },
   { href: '/teachers', label: '先生' },
   { href: '/schools', label: '学校' },
+  { href: '/target-schools', label: '志望校' },
   { href: '/islands', label: '島（場所）' },
   { href: '/periods', label: 'コマ' },
   { href: '/terms', label: '期間・講習' },

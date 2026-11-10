@@ -32,3 +32,10 @@ test('教材の行を変換する', async () => {
   expect(toSchoolMaterial({ id: 'm', school_id: 's', grade: '中1', subject: '英語', name: 'NEW HORIZON', publisher: '東京書籍', memo: '' }))
     .toEqual({ id: 'm', schoolId: 's', grade: '中1', subject: '英語', name: 'NEW HORIZON', publisher: '東京書籍', memo: '' });
 });
+
+test('志望校の行を変換する', async () => {
+  const { toTargetSchool } = await import('./repo');
+  const s = toTargetSchool({ id: 'x', mext_code: 'D1', kind: '高校', pref_code: '11', establishment: '公立', name: 'あおば高', address: 'a', postal: 'p',
+    closed: false, hensachi: '', courses: '', exam_schedule: '', exam_subjects: '', competition: '', career_note: '', sources: null, researched_at: null });
+  expect(s).toMatchObject({ mextCode: 'D1', prefCode: '11', examSchedule: '', sources: [], researchedAt: null });
+});

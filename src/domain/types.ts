@@ -32,3 +32,9 @@ export interface SchoolMaterial { id: string; schoolId: string; grade: Grade; su
 export interface MaterialUnit { id: string; materialId: string; name: string; sortOrder: number }
 export interface TestQuestion { unit: string; question: string; choices: string[]; answer: string; explanation: string }
 export interface GeneratedTest { id: string; materialId: string; unitNames: string[]; difficulty: string; testType: string; title: string; questions: TestQuestion[]; createdAt: string }
+export interface TargetSchool {
+  id: string; mextCode: string; kind: '中学' | '高校'; prefCode: string; establishment: '国立' | '公立' | '私立';
+  name: string; address: string; postal: string; closed: boolean;
+  hensachi: string; courses: string; examSchedule: string; examSubjects: string; competition: string; careerNote: string;
+  sources: { url: string; title: string }[]; researchedAt: string | null;
+}
