@@ -38,3 +38,9 @@ export interface TargetSchool {
   hensachi: string; courses: string; examSchedule: string; examSubjects: string; competition: string; careerNote: string;
   sources: { url: string; title: string }[]; researchedAt: string | null;
 }
+/** 授業記録（生徒カルテの1件） */
+export interface LessonRecord {
+  id: string; studentId: string; date: string; periodId: string | null; teacherId: string | null; placementId: string | null;
+  subject: Subject; materialId: string | null; unitNames: string[]; understanding: '◎' | '○' | '△' | '×';
+  homework: string; note: string; teacherName: string; createdAt: string;
+}

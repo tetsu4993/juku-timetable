@@ -35,9 +35,11 @@
 | S10 学校の教材 |  | R |  |  |  | **CRUD** |  |  |  |  |
 | S11 教材 |  |  |  |  |  | R | **CRUD** | **RD** |  |  |
 | S12 疑似テスト |  |  |  |  |  | R |  | R |  |  |
+| S18 生徒カルテ | R | R |  |  |  | R | R |  |  |  |
 | S13 志望校 |  |  |  |  |  |  |  |  | **RU** | R |
 
 補足
+- 授業記録（`lesson_records`）：S02 時間割のチップから CRU、S18 カルテから CRUD
 - S05：点数は「テスト・生徒・科目」の組で upsert（未入力から入力＝C、変更＝U、空欄にする＝U で null）
 - S13：AI調査の結果を手で直して保存（U）。登録・更新・AI調査は下の API が行います
 
@@ -81,5 +83,6 @@
 | ai_usage | AI（関数） | AIの残り回数 | AI（関数） | — |
 | target_schools | 登録・更新API | S13, AI調査 | S13, 登録・更新API, AI調査 | — |
 | target_school_regions | 登録・更新API | S13, 登録・更新API | — | — |
+| lesson_records | S02, S18 | S02, S18 | S02, S18 | S18 |
 
 ※ すべてのテーブル（`target_schools`・`target_school_regions`・`ai_usage` を除く）は、デモ初期化で削除・再作成されます。

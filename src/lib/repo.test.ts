@@ -39,3 +39,10 @@ test('志望校の行を変換する', async () => {
     closed: false, hensachi: '', courses: '', exam_schedule: '', exam_subjects: '', competition: '', career_note: '', sources: null, researched_at: null });
   expect(s).toMatchObject({ mextCode: 'D1', prefCode: '11', examSchedule: '', sources: [], researchedAt: null });
 });
+
+test('授業記録の行を変換する', async () => {
+  const { toLessonRecord } = await import('./repo');
+  expect(toLessonRecord({ id: 'r', student_id: 's', date: '2026-11-10', period_id: null, teacher_id: 't', placement_id: null, subject: '数学',
+    material_id: null, unit_names: null, understanding: '△', homework: 'p.10', note: '', teacher_name: '山田先生', created_at: 'x' }))
+    .toMatchObject({ studentId: 's', teacherId: 't', unitNames: [], understanding: '△', teacherName: '山田先生' });
+});
