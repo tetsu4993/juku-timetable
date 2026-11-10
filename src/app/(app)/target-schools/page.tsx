@@ -9,6 +9,7 @@ import { Button, ErrorText, Field, inputCls, Modal, PageTitle, Table, useLoad } 
 type Located = { prefCode: string; prefName: string; region: { code: string; name: string }[] };
 type Quota = { limit: number; remaining: number; enabled: boolean };
 const PAGE = 100;
+const hostOf = (url: string) => { try { return new URL(url).hostname; } catch { return url; } };
 
 const INFO_FIELDS: [keyof TargetSchool, string][] = [
   ['hensachi', '偏差値'], ['courses', '学科・コース'], ['examSchedule', '入試日程'],
@@ -141,13 +142,13 @@ export default function TargetSchoolsPage() {
             {filtered.slice(0, limit).map((s) => (
               <tr key={s.id} className={s.closed ? 'opacity-50' : ''}>
                 <td className="px-4 py-2">
-                  <button className="text-left font-medium text-indigo-700 hover:underline" onClick={() => setDetail(s)}>{s.name}</button>
+                  <button className="whitespace-nowrap text-left font-medium text-indigo-700 hover:underline" onClick={() => setDetail(s)}>{s.name}</button>
                   {s.closed && <span className="ml-2 rounded bg-slate-200 px-1.5 text-xs">閉校</span>}
                 </td>
                 <td className="whitespace-nowrap px-4 py-2 text-slate-600">{s.establishment}{s.kind}</td>
                 <td className="px-4 py-2 text-xs text-slate-500">{s.address}</td>
-                <td className="whitespace-nowrap px-4 py-2">{s.hensachi || <span className="text-slate-300">—</span>}</td>
-                <td className="max-w-md truncate px-4 py-2 text-xs text-slate-600" title={s.careerNote}>{s.careerNote}</td>
+                <td className="px-4 py-2"><div className="line-clamp-2 max-w-48 text-xs" title={s.hensachi}>{s.hensachi || <span className="text-slate-300">—</span>}</div></td>
+                <td className="px-4 py-2 text-xs text-slate-600"><div className="line-clamp-2 max-w-xl" title={s.careerNote}>{s.careerNote}</div></td>
                 <td className="whitespace-nowrap px-4 py-2 text-right">
                   <Button variant="ghost" disabled={!!busy || s.closed || !data?.quota?.enabled || data.quota.remaining === 0} onClick={() => research(s)}>
                     {busy === s.id ? '調査中…（1分ほど）' : s.researchedAt ? 'AIで再調査' : 'AIで調べる'}
@@ -164,30 +165,54 @@ export default function TargetSchoolsPage() {
       )}
 
       {detail && (
-        <Modal title={detail.name} onClose={() => setDetail(null)}>
-          <p className="mb-3 text-xs text-slate-500">
-            {PREFECTURES[detail.prefCode]}・{detail.establishment}{detail.kind}　〒{detail.postal} {detail.address}
-            {detail.researchedAt && <>　／　AI調査：{new Date(detail.researchedAt).toLocaleDateString('ja-JP')}</>}
-          </p>
-          <div className="space-y-3">
-            {INFO_FIELDS.map(([k, label]) => (
-              <Field key={k} label={label}>
-                <textarea className={`${inputCls} ${k === 'careerNote' ? 'h-24' : 'h-12'}`} value={String(detail[k] ?? '')}
-                  onChange={(e) => setDetail({ ...detail, [k]: e.target.value })} />
-              </Field>
-            ))}
-            {detail.sources.length > 0 && (
-              <div className="text-xs">
-                <p className="mb-1 font-medium text-slate-700">出典</p>
-                <ul className="space-y-0.5">
-                  {detail.sources.map((src) => (
-                    <li key={src.url} className="truncate"><a href={src.url} target="_blank" rel="noreferrer noopener" className="text-indigo-600 hover:underline">{src.title || src.url}</a></li>
-                  ))}
-                </ul>
-              </div>
-            )}
+        <Modal title={detail.name} onClose={() => setDetail(null)} size="xl">
+          <div className="-mt-2 mb-5 flex flex-wrap gap-2 text-sm">
+            <span className="rounded-full bg-indigo-50 px-3 py-1 text-indigo-800">{PREFECTURES[detail.prefCode]}</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">{detail.establishment}{detail.kind}</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">〒{detail.postal} {detail.address}</span>
+            <span className={`rounded-full px-3 py-1 ${detail.researchedAt ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>
+              {detail.researchedAt ? `AI調査：${new Date(detail.researchedAt).toLocaleDateString('ja-JP')}` : 'AI未調査'}
+            </span>
           </div>
-          <div className="mt-4 flex justify-between gap-2">
+
+          <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
+            <div className="grid gap-4 md:grid-cols-2">
+              {INFO_FIELDS.map(([k, label]) => (
+                <div key={k} className={k === 'careerNote' || k === 'examSchedule' ? 'md:col-span-2' : ''}>
+                  <Field label={label}>
+                    {/* 内容の行数に合わせて高さを伸ばす（スクロールせずに全文が読める） */}
+                    <textarea
+                      className={`${inputCls} resize-y text-[15px] leading-relaxed`}
+                      rows={Math.max(k === 'careerNote' ? 5 : 3, Math.ceil(String(detail[k] ?? '').length / (k === 'careerNote' || k === 'examSchedule' ? 70 : 32)) + 1)}
+                      value={String(detail[k] ?? '')}
+                      placeholder="未入力"
+                      onChange={(e) => setDetail({ ...detail, [k]: e.target.value })} />
+                  </Field>
+                </div>
+              ))}
+            </div>
+
+            <aside className="rounded-xl bg-slate-50 p-4">
+              <p className="mb-2 text-sm font-bold text-slate-700">出典（{detail.sources.length}件）</p>
+              {detail.sources.length === 0 ? (
+                <p className="text-sm text-slate-400">AIで調べると、参照したページがここに並びます。</p>
+              ) : (
+                <ol className="space-y-2 text-sm">
+                  {detail.sources.map((src, i) => (
+                    <li key={src.url} className="flex gap-2">
+                      <span className="shrink-0 text-slate-400">{i + 1}.</span>
+                      <a href={src.url} target="_blank" rel="noreferrer noopener" className="min-w-0 text-indigo-700 hover:underline">
+                        <span className="block leading-snug">{src.title || src.url}</span>
+                        <span className="block truncate text-xs text-slate-400">{hostOf(src.url)}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+              )}
+              <p className="mt-3 text-xs text-slate-500">AIの調査結果は誤りを含むことがあります。出典で確認し、必要に応じて直してください。</p>
+            </aside>
+          </div>
+          <div className="mt-6 flex justify-between gap-2 border-t pt-4">
             <Button variant="ghost" disabled={!!busy || detail.closed || !data?.quota?.enabled || data.quota.remaining === 0} onClick={() => research(detail)}>
               {busy === detail.id ? 'AIが調査中…' : detail.researchedAt ? 'AIで再調査' : 'AIで調べる'}
             </Button>
