@@ -60,13 +60,7 @@ AI駆動開発（Claude Code）で作成しました。
 
 ## ローカルでの起動
 
-```bash
-npm install
-cp .env.example .env.local   # Supabase の URL・キーを記入
-npm run dev
-```
-
-DBは Supabase の SQL Editor で `supabase/migrations/` のSQLを順に実行し、`select reset_demo();` でデモデータを入れます。
+手順は [docs/02_ローカル起動手順書](docs/02_ローカル起動手順書.md)、初回の準備は [docs/01_ローカル環境構築書](docs/01_ローカル環境構築書.md) を参照してください。設計書・CRUD表などのドキュメント一覧は [docs/README.md](docs/README.md) にあります。
 
 ## 今後の予定
 

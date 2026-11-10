@@ -1,5 +1,5 @@
 import type {
-  CellIsland, GeneratedTest, Island, MaterialUnit, School, SchoolMaterial,
+  CellIsland, GeneratedTest, Island, LessonRecord, MaterialUnit, School, SchoolMaterial, TargetSchool,
   Availability, Enrollment, Exam, ExtraAttendee, Grade, Period, Placement, Score, Student, Subject, Teacher, TemplateSlot, Term, Weekday,
 } from '@/domain/types';
 import { createClient } from './supabase/client';
@@ -235,3 +235,53 @@ export async function getGeneratedTest(id: string): Promise<GeneratedTest | null
   return rows[0] ? toGeneratedTest(rows[0]) : null;
 }
 export const deleteGeneratedTest = (id: string) => run(db().from('generated_tests').delete().eq('id', id));
+
+// ---- 志望校マスタ ----
+export const toTargetSchool = (r: Row): TargetSchool => ({
+  id: r.id, mextCode: r.mext_code, kind: r.kind, prefCode: r.pref_code, establishment: r.establishment,
+  name: r.name, address: r.address, postal: r.postal, closed: r.closed,
+  hensachi: r.hensachi, courses: r.courses, examSchedule: r.exam_schedule, examSubjects: r.exam_subjects,
+  competition: r.competition, careerNote: r.career_note, sources: r.sources ?? [], researchedAt: r.researched_at,
+});
+/** 志望校をすべて読む（1回1000件までなので分けて取る） */
+export async function listTargetSchools(): Promise<TargetSchool[]> {
+  const all: TargetSchool[] = [];
+  for (let from = 0; ; from += 1000) {
+    const rows = await run<Row[]>(db().from('target_schools').select('*').order('pref_code').order('kind').order('name').range(from, from + 999));
+    all.push(...rows.map(toTargetSchool));
+    if (rows.length < 1000) return all;
+  }
+}
+export const listTargetRegions = async () =>
+  (await run<Row[]>(db().from('target_school_regions').select('pref_code').order('pref_code'))).map((r) => r.pref_code as string);
+export const updateTargetSchoolInfo = (id: string, x: Pick<TargetSchool, 'hensachi' | 'courses' | 'examSchedule' | 'examSubjects' | 'competition' | 'careerNote'>) =>
+  run(db().from('target_schools').update({
+    hensachi: x.hensachi, courses: x.courses, exam_schedule: x.examSchedule, exam_subjects: x.examSubjects,
+    competition: x.competition, career_note: x.careerNote,
+  }).eq('id', id));
+
+// ---- 授業記録（生徒カルテ） ----
+export const toLessonRecord = (r: Row): LessonRecord => ({
+  id: r.id, studentId: r.student_id, date: r.date, periodId: r.period_id, teacherId: r.teacher_id, placementId: r.placement_id,
+  subject: r.subject, materialId: r.material_id, unitNames: r.unit_names ?? [], understanding: r.understanding,
+  homework: r.homework, note: r.note, teacherName: r.teacher_name, createdAt: r.created_at,
+});
+export const listLessonRecords = async (studentId: string) =>
+  (await run<Row[]>(db().from('lesson_records').select('*').eq('student_id', studentId).order('date', { ascending: false }))).map(toLessonRecord);
+/** その日の記録（時間割の📝表示用） */
+export const listLessonRecordsOn = async (date: string) =>
+  (await run<Row[]>(db().from('lesson_records').select('*').eq('date', date))).map(toLessonRecord);
+export async function saveLessonRecord(x: Omit<LessonRecord, 'id' | 'createdAt'> & { id?: string }) {
+  await run(db().from('lesson_records').upsert({
+    ...(x.id ? { id: x.id } : {}), student_id: x.studentId, date: x.date, period_id: x.periodId, teacher_id: x.teacherId,
+    placement_id: x.placementId, subject: x.subject, material_id: x.materialId, unit_names: x.unitNames,
+    understanding: x.understanding, homework: x.homework, note: x.note, teacher_name: x.teacherName,
+  }));
+}
+export const deleteLessonRecord = (id: string) => run(db().from('lesson_records').delete().eq('id', id));
+/** 生徒の学校・学年・科目に合う教材 */
+export async function listMaterialsFor(schoolId: string | null | undefined, grade: string, subject: string): Promise<SchoolMaterial[]> {
+  if (!schoolId) return [];
+  return (await run<Row[]>(db().from('school_materials').select('*').eq('school_id', schoolId).eq('grade', grade).eq('subject', subject).order('created_at')))
+    .map(toSchoolMaterial);
+}
